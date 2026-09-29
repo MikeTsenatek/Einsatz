@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   color="black"
+   fill="transparent"
+   stroke="black"
+   stroke-width="2"
+   viewBox="0 0 45 45"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="tz_halteplatz.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="8.3132668"
+     inkscape:cx="7.1572345"
+     inkscape:cy="43.304276"
+     inkscape:window-width="1899"
+     inkscape:window-height="2107"
+     inkscape:window-x="1927"
+     inkscape:window-y="12"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6" />
+  <defs
+     id="defs1">
+    <clipPath
+       id="tz_stelle">
+      <circle
+         cx="22.5"
+         cy="22.5"
+         r="21.5"
+         id="circle1" />
+    </clipPath>
+  </defs>
+  <circle
+     cx="22.5"
+     cy="22.5"
+     fill="#ffffff"
+     r="21.5"
+     id="circle2"
+     style="stroke-width:1;stroke-dasharray:none" />
+  <g
+     clip-path="url(#tz_stelle)"
+     id="g3"
+     style="stroke-width:1;stroke-dasharray:none">
+    <g
+       transform="translate(-15,0)"
+       id="g2"
+       style="stroke-width:1;stroke-dasharray:none">
+      <path
+         d="M0,22.5 H75 M37.5,0 V45"
+         id="path2"
+         style="stroke-width:1;stroke-dasharray:none" />
+    </g>
+  </g>
+  <g
+     clip-path="url(#tz_stelle)"
+     id="g6"
+     style="stroke-width:1;stroke-dasharray:none">
+    <g
+       transform="translate(10,10) scale(0.8333333333333334)"
+       id="g5"
+       style="stroke-width:1.2;stroke-dasharray:none">
+      <g
+         id="g4"
+         style="stroke-width:1.2;stroke-dasharray:none">
+        <circle
+           cx="15"
+           cy="15"
+           r="14"
+           id="circle3"
+           style="stroke-width:1.2;stroke-dasharray:none" />
+        <path
+           d="M1,15 h28 M15,1 v28 M5,5 l20,20  M5,25 l20,-20"
+           id="path3"
+           style="stroke-width:1.2;stroke-dasharray:none" />
+      </g>
+    </g>
+  </g>
+</svg>

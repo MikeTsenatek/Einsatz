@@ -1,0 +1,1642 @@
+[
+  {
+    "model": "mgmt.genderenum",
+    "pk": 1,
+    "fields": {
+      "name": "Männlich"
+    }
+  },
+  {
+    "model": "mgmt.genderenum",
+    "pk": 2,
+    "fields": {
+      "name": "Weiblich"
+    }
+  },
+  {
+    "model": "mgmt.genderenum",
+    "pk": 3,
+    "fields": {
+      "name": "Divers"
+    }
+  },
+  {
+    "model": "mgmt.assigningenum",
+    "pk": 1,
+    "fields": {
+      "name": "Selbst"
+    }
+  },
+  {
+    "model": "mgmt.assigningenum",
+    "pk": 2,
+    "fields": {
+      "name": "Polizei"
+    }
+  },
+  {
+    "model": "mgmt.assigningenum",
+    "pk": 3,
+    "fields": {
+      "name": "San-Team"
+    }
+  },
+  {
+    "model": "mgmt.assigningenum",
+    "pk": 4,
+    "fields": {
+      "name": "Security"
+    }
+  },
+  {
+    "model": "mgmt.assigningenum",
+    "pk": 5,
+    "fields": {
+      "name": "Sonstige"
+    }
+  },
+  {
+    "model": "mgmt.leavingenum",
+    "pk": 1,
+    "fields": {
+      "name": "Zurück zur Veranstaltung",
+      "has_to_be_specified": false
+    }
+  },
+  {
+    "model": "mgmt.leavingenum",
+    "pk": 2,
+    "fields": {
+      "name": "Nach Hause",
+      "has_to_be_specified": false
+    }
+  },
+  {
+    "model": "mgmt.leavingenum",
+    "pk": 3,
+    "fields": {
+      "name": "Krankenhaus",
+      "has_to_be_specified": true
+    }
+  },
+  {
+    "model": "mgmt.leavingenum",
+    "pk": 4,
+    "fields": {
+      "name": "Sonst",
+      "has_to_be_specified": true
+    }
+  },
+  {
+    "model": "mgmt.leavingenum",
+    "pk": 5,
+    "fields": {
+      "name": "Angehörige",
+      "has_to_be_specified": false
+    }
+  },
+  {
+    "model": "mgmt.priorityenum",
+    "pk": 1,
+    "fields": {
+      "level": 1,
+      "name": "Sehr hoch"
+    }
+  },
+  {
+    "model": "mgmt.priorityenum",
+    "pk": 2,
+    "fields": {
+      "level": 2,
+      "name": "dringend"
+    }
+  },
+  {
+    "model": "mgmt.priorityenum",
+    "pk": 3,
+    "fields": {
+      "level": 3,
+      "name": "normal"
+    }
+  },
+  {
+    "model": "mgmt.priorityenum",
+    "pk": 4,
+    "fields": {
+      "level": 4,
+      "name": "niedrig"
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 1,
+    "fields": {
+      "name": "Schlaganfall",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 2,
+    "fields": {
+      "name": "Apoplex / Apoplex cerebri",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 3,
+    "fields": {
+      "name": "Hirninfarkt",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 4,
+    "fields": {
+      "name": "Transitorische ischämische Attacke (TIA)",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 5,
+    "fields": {
+      "name": "Hirnblutung / intrakranielle Blutung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 6,
+    "fields": {
+      "name": "Subarachnoidalblutung (SAB)",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 7,
+    "fields": {
+      "name": "Krampfanfall",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 8,
+    "fields": {
+      "name": "Epileptischer Anfall",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 9,
+    "fields": {
+      "name": "Status epilepticus",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 10,
+    "fields": {
+      "name": "Synkope / Ohnmacht",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 11,
+    "fields": {
+      "name": "Bewusstseinsstörung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 12,
+    "fields": {
+      "name": "Bewusstlosigkeit",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 13,
+    "fields": {
+      "name": "Schädel-Hirn-Trauma (SHT)",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 14,
+    "fields": {
+      "name": "Gehirnerschütterung / Commotio cerebri",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 15,
+    "fields": {
+      "name": "Kopfschmerzen / Cephalgie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 16,
+    "fields": {
+      "name": "Schwindel / Vertigo",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 17,
+    "fields": {
+      "name": "Lähmung / Parese",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 18,
+    "fields": {
+      "name": "Halbseitenlähmung / Hemiparese",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 19,
+    "fields": {
+      "name": "Sprachstörung / Aphasie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 20,
+    "fields": {
+      "name": "Meningitis / Hirnhautentzündung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 21,
+    "fields": {
+      "name": "Herzinfarkt / Myokardinfarkt",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 22,
+    "fields": {
+      "name": "Akutes Koronarsyndrom (ACS)",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 23,
+    "fields": {
+      "name": "Angina pectoris",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 24,
+    "fields": {
+      "name": "Brustschmerz / Thoraxschmerz",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 25,
+    "fields": {
+      "name": "Herzrhythmusstörung / Arrhythmie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 26,
+    "fields": {
+      "name": "Tachykardie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 27,
+    "fields": {
+      "name": "Bradykardie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 28,
+    "fields": {
+      "name": "Vorhofflimmern",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 29,
+    "fields": {
+      "name": "Hypertensive Krise",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 30,
+    "fields": {
+      "name": "Hypotonie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 31,
+    "fields": {
+      "name": "Kreislaufkollaps",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 32,
+    "fields": {
+      "name": "Synkope",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 33,
+    "fields": {
+      "name": "Herzinsuffizienz",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 34,
+    "fields": {
+      "name": "Akute Herzinsuffizienz",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 35,
+    "fields": {
+      "name": "Kardiogener Schock",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 36,
+    "fields": {
+      "name": "Herz-Kreislauf-Stillstand",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 37,
+    "fields": {
+      "name": "Reanimationspflichtigkeit",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 38,
+    "fields": {
+      "name": "Kammerflimmern",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 39,
+    "fields": {
+      "name": "Lungenembolie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 40,
+    "fields": {
+      "name": "Aortendissektion",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 41,
+    "fields": {
+      "name": "Atemnot / Dyspnoe",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 42,
+    "fields": {
+      "name": "Akute Atemnot",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 43,
+    "fields": {
+      "name": "Asthmaanfall",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 44,
+    "fields": {
+      "name": "Asthma bronchiale",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 45,
+    "fields": {
+      "name": "COPD-Exazerbation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 46,
+    "fields": {
+      "name": "Hyperventilation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 47,
+    "fields": {
+      "name": "Atemwegsverlegung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 48,
+    "fields": {
+      "name": "Fremdkörperaspiration",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 49,
+    "fields": {
+      "name": "Verschlucken",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 50,
+    "fields": {
+      "name": "Erstickungsgefahr",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 51,
+    "fields": {
+      "name": "Anaphylaxie / anaphylaktische Reaktion",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 52,
+    "fields": {
+      "name": "Lungenödem",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 53,
+    "fields": {
+      "name": "Pneumothorax",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 54,
+    "fields": {
+      "name": "Spannungspneumothorax",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 55,
+    "fields": {
+      "name": "Rauchgasinhalation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 56,
+    "fields": {
+      "name": "Kohlenmonoxidvergiftung / CO-Intoxikation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 57,
+    "fields": {
+      "name": "Zyanose",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 58,
+    "fields": {
+      "name": "Kopfplatzwunde",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 59,
+    "fields": {
+      "name": "Schädelprellung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 60,
+    "fields": {
+      "name": "Schädelbasisfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 61,
+    "fields": {
+      "name": "Gesichtsverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 62,
+    "fields": {
+      "name": "Nasenbluten / Epistaxis",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 63,
+    "fields": {
+      "name": "Nasenbeinfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 64,
+    "fields": {
+      "name": "Augenverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 65,
+    "fields": {
+      "name": "Fremdkörper im Auge",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 66,
+    "fields": {
+      "name": "Zahnverletzung / Zahntrauma",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 67,
+    "fields": {
+      "name": "Kieferfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 68,
+    "fields": {
+      "name": "Schulterverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 69,
+    "fields": {
+      "name": "Schulterluxation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 70,
+    "fields": {
+      "name": "Schlüsselbeinbruch / Klavikulafraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 71,
+    "fields": {
+      "name": "Oberarmfraktur / Humerusfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 72,
+    "fields": {
+      "name": "Ellenbogenverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 73,
+    "fields": {
+      "name": "Unterarmfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 74,
+    "fields": {
+      "name": "Radiusfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 75,
+    "fields": {
+      "name": "Ulnafraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 76,
+    "fields": {
+      "name": "Handgelenksverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 77,
+    "fields": {
+      "name": "Handgelenksfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 78,
+    "fields": {
+      "name": "Fingerverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 79,
+    "fields": {
+      "name": "Fingerfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 80,
+    "fields": {
+      "name": "Schnittverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 81,
+    "fields": {
+      "name": "Quetschverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 82,
+    "fields": {
+      "name": "Hüftverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 83,
+    "fields": {
+      "name": "Hüftluxation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 84,
+    "fields": {
+      "name": "Beckenfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 85,
+    "fields": {
+      "name": "Beinverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 86,
+    "fields": {
+      "name": "Beinfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 87,
+    "fields": {
+      "name": "Oberschenkelfraktur / Femurfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 88,
+    "fields": {
+      "name": "Knieverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 89,
+    "fields": {
+      "name": "Kniescheibenverletzung / Patellaverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 90,
+    "fields": {
+      "name": "Patellaluxation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 91,
+    "fields": {
+      "name": "Unterschenkelfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 92,
+    "fields": {
+      "name": "Tibiafraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 93,
+    "fields": {
+      "name": "Fibulafraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 94,
+    "fields": {
+      "name": "Sprunggelenksverletzung / OSG-Verletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 95,
+    "fields": {
+      "name": "Knöchelverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 96,
+    "fields": {
+      "name": "Distorsion / Verstauchung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 97,
+    "fields": {
+      "name": "Bänderdehnung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 98,
+    "fields": {
+      "name": "Bänderriss / Bandruptur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 99,
+    "fields": {
+      "name": "Sprunggelenksfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 100,
+    "fields": {
+      "name": "Außenknöchelfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 101,
+    "fields": {
+      "name": "Innenknöchelfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 102,
+    "fields": {
+      "name": "Fußverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 103,
+    "fields": {
+      "name": "Mittelfußfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 104,
+    "fields": {
+      "name": "Zehenfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 105,
+    "fields": {
+      "name": "Wirbelsäulenverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 106,
+    "fields": {
+      "name": "Halswirbelsäulenverletzung / HWS-Trauma",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 107,
+    "fields": {
+      "name": "Brustwirbelsäulenverletzung / BWS-Trauma",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 108,
+    "fields": {
+      "name": "Lendenwirbelsäulenverletzung / LWS-Trauma",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 109,
+    "fields": {
+      "name": "Wirbelkörperfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 110,
+    "fields": {
+      "name": "Thoraxtrauma",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 111,
+    "fields": {
+      "name": "Rippenprellung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 112,
+    "fields": {
+      "name": "Rippenfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 113,
+    "fields": {
+      "name": "Rippenserienfraktur",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 114,
+    "fields": {
+      "name": "Bauchtrauma / Abdominaltrauma",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 115,
+    "fields": {
+      "name": "Beckenverletzung / Beckentrauma",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 116,
+    "fields": {
+      "name": "Schürfwunde / Exkoriation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 117,
+    "fields": {
+      "name": "Schnittwunde",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 118,
+    "fields": {
+      "name": "Platzwunde / Riss-Quetsch-Wunde",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 119,
+    "fields": {
+      "name": "Stichwunde",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 120,
+    "fields": {
+      "name": "Bisswunde",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 121,
+    "fields": {
+      "name": "Quetschwunde",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 122,
+    "fields": {
+      "name": "Stark blutende Wunde",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 123,
+    "fields": {
+      "name": "Arterielle Blutung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 124,
+    "fields": {
+      "name": "Venöse Blutung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 125,
+    "fields": {
+      "name": "Amputationsverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 126,
+    "fields": {
+      "name": "Fremdkörperverletzung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 127,
+    "fields": {
+      "name": "Innere Blutung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 128,
+    "fields": {
+      "name": "Hämatom / Bluterguss",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 129,
+    "fields": {
+      "name": "Verbrennung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 130,
+    "fields": {
+      "name": "Verbrühung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 131,
+    "fields": {
+      "name": "Inhalationstrauma",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 132,
+    "fields": {
+      "name": "Sonnenbrand",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 133,
+    "fields": {
+      "name": "Hitzeerschöpfung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 134,
+    "fields": {
+      "name": "Hitzekollaps",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 135,
+    "fields": {
+      "name": "Hitzschlag",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 136,
+    "fields": {
+      "name": "Sonnenstich",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 137,
+    "fields": {
+      "name": "Unterkühlung / Hypothermie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 138,
+    "fields": {
+      "name": "Erfrierung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 139,
+    "fields": {
+      "name": "Unterzuckerung / Hypoglykämie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 140,
+    "fields": {
+      "name": "Überzuckerung / Hyperglykämie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 141,
+    "fields": {
+      "name": "Diabetes mellitus",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 142,
+    "fields": {
+      "name": "Diabetische Ketoazidose (DKA)",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 143,
+    "fields": {
+      "name": "Bauchschmerzen / Abdominalschmerzen",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 144,
+    "fields": {
+      "name": "Akutes Abdomen",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 145,
+    "fields": {
+      "name": "Übelkeit / Nausea",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 146,
+    "fields": {
+      "name": "Erbrechen / Emesis",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 147,
+    "fields": {
+      "name": "Durchfall / Diarrhö",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 148,
+    "fields": {
+      "name": "Gastrointestinale Blutung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 149,
+    "fields": {
+      "name": "Bluterbrechen / Hämatemesis",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 150,
+    "fields": {
+      "name": "Blut im Stuhl",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 151,
+    "fields": {
+      "name": "Nierenkolik",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 152,
+    "fields": {
+      "name": "Gallenkolik",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 153,
+    "fields": {
+      "name": "Appendizitis / Blinddarmentzündung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 154,
+    "fields": {
+      "name": "Allergische Reaktion",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 155,
+    "fields": {
+      "name": "Anaphylaxie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 156,
+    "fields": {
+      "name": "Anaphylaktischer Schock",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 157,
+    "fields": {
+      "name": "Lebensmittelallergie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 158,
+    "fields": {
+      "name": "Insektenstichreaktion",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 159,
+    "fields": {
+      "name": "Medikamentenreaktion",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 160,
+    "fields": {
+      "name": "Vergiftung / Intoxikation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 161,
+    "fields": {
+      "name": "Alkoholintoxikation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 162,
+    "fields": {
+      "name": "Drogenintoxikation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 163,
+    "fields": {
+      "name": "Medikamentenintoxikation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 164,
+    "fields": {
+      "name": "Mischintoxikation",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 165,
+    "fields": {
+      "name": "Kohlenmonoxidintoxikation (CO-Intoxikation)",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 166,
+    "fields": {
+      "name": "Panikattacke",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 167,
+    "fields": {
+      "name": "Angstzustand",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 168,
+    "fields": {
+      "name": "Hyperventilationssyndrom",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 169,
+    "fields": {
+      "name": "Akute Belastungsreaktion",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 170,
+    "fields": {
+      "name": "Psychischer Ausnahmezustand",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 171,
+    "fields": {
+      "name": "Verwirrtheit / Desorientierung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 172,
+    "fields": {
+      "name": "Agitation / starke Unruhe",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 173,
+    "fields": {
+      "name": "Schwangerschaftsbeschwerden",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 174,
+    "fields": {
+      "name": "Vaginale Blutung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 175,
+    "fields": {
+      "name": "Fehlgeburt / Abort",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 176,
+    "fields": {
+      "name": "Einsetzende Geburt",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 177,
+    "fields": {
+      "name": "Wehentätigkeit",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 178,
+    "fields": {
+      "name": "Sturz/Trauma in der Schwangerschaft",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 179,
+    "fields": {
+      "name": "Schmerzen",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 180,
+    "fields": {
+      "name": "Brustschmerzen / Thoraxschmerzen",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 181,
+    "fields": {
+      "name": "Rückenschmerzen / Dorsalgie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 182,
+    "fields": {
+      "name": "Schwächegefühl",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 183,
+    "fields": {
+      "name": "Kreislaufbeschwerden",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 184,
+    "fields": {
+      "name": "Herzrasen / Palpitationen",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 185,
+    "fields": {
+      "name": "Fieber / Pyrexie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 186,
+    "fields": {
+      "name": "Zittern / Tremor",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 187,
+    "fields": {
+      "name": "Taubheitsgefühl / Hypästhesie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 188,
+    "fields": {
+      "name": "Kribbeln / Parästhesie",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.treatmentkeyword",
+    "pk": 189,
+    "fields": {
+      "name": "Desorientierung",
+      "is_active": true
+    }
+  }
+]

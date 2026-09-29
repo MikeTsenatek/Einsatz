@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 
-defineProps({ busy: Boolean, error: String })
+defineProps({ busy: Boolean, error: String, ssoEnabled: Boolean })
 const emit = defineEmits(['submit'])
 const username = ref('')
 const password = ref('')
@@ -10,17 +10,18 @@ const password = ref('')
 <template>
   <form :aria-busy="busy" @submit.prevent="emit('submit', { username, password })">
     <h1 id="login-title">Anmelden</h1>
-    <p class="login-description">Geben Sie Ihre Zugangsdaten ein.</p>
-    <div class="login-field">
+    <p class="login-description">{{ ssoEnabled ? 'Melden Sie sich mit Ihrem Keycloak-Konto an.' : 'Geben Sie Ihre Zugangsdaten ein.' }}</p>
+    <div v-if="!ssoEnabled" class="login-field">
       <label for="username">Benutzername</label>
       <input id="username" v-model.trim="username" required autofocus autocomplete="username" autocapitalize="none" :spellcheck="false">
     </div>
-    <div class="login-field">
+    <div v-if="!ssoEnabled" class="login-field">
       <label for="password">Passwort</label>
       <input id="password" v-model="password" required type="password" autocomplete="current-password">
     </div>
     <p v-if="error" class="login-error" role="alert">{{ error }}</p>
-    <button class="login-submit" type="submit" :disabled="busy">{{ busy ? 'Anmeldung läuft …' : 'Anmelden' }}</button>
+    <button v-if="!ssoEnabled" class="login-submit" type="submit" :disabled="busy">{{ busy ? 'Anmeldung läuft …' : 'Anmelden' }}</button>
+    <a v-if="ssoEnabled" class="sso-login" href="/oidc/authenticate/">Mit Keycloak anmelden</a>
   </form>
 </template>
 
@@ -82,6 +83,23 @@ h1 {
 
 .login-submit:hover:not(:disabled) {
   background: #1c2c38;
+}
+
+.sso-login {
+  display: block;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border: 1px solid #c5ccd1;
+  border-radius: 4px;
+  color: #293b49;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.sso-login:hover {
+  background: #f5f6f7;
 }
 
 .login-error {

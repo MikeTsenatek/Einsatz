@@ -1,5 +1,8 @@
 import os
 from pathlib import Path
+from urllib.parse import quote
+
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -21,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'mozilla_django_oidc',
     'channels',
     'apps.map',
     'apps.orders',
@@ -47,6 +51,62 @@ ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 AUTH_USER_MODEL = 'users.User'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+_keycloak_server_url = os.getenv('KEYCLOAK_SERVER_URL', '').strip().rstrip('/')
+_keycloak_realm = os.getenv('KEYCLOAK_REALM', '').strip()
+_keycloak_client_id = os.getenv('KEYCLOAK_CLIENT_ID', '').strip()
+_keycloak_client_secret = os.getenv('KEYCLOAK_CLIENT_SECRET', '').strip()
+KEYCLOAK_REQUIRED_GROUP = os.getenv('KEYCLOAK_REQUIRED_GROUP', '').strip()
+KEYCLOAK_GROUPS_CLAIM = os.getenv('KEYCLOAK_GROUPS_CLAIM', 'groups').strip()
+KEYCLOAK_GROUPS_SCOPE = os.getenv('KEYCLOAK_GROUPS_SCOPE', 'groups').strip()
+
+_keycloak_configuration = {
+    'KEYCLOAK_SERVER_URL': _keycloak_server_url,
+    'KEYCLOAK_REALM': _keycloak_realm,
+    'KEYCLOAK_CLIENT_ID': _keycloak_client_id,
+    'KEYCLOAK_CLIENT_SECRET': _keycloak_client_secret,
+    'KEYCLOAK_REQUIRED_GROUP': KEYCLOAK_REQUIRED_GROUP,
+}
+_keycloak_configured = [bool(value) for value in _keycloak_configuration.values()]
+if any(_keycloak_configured) and not all(_keycloak_configured):
+    missing = ', '.join(
+        name for name, value in _keycloak_configuration.items() if not value
+    )
+    raise ImproperlyConfigured(
+        f'Unvollständige Keycloak-Konfiguration. Fehlend: {missing}'
+    )
+
+KEYCLOAK_SSO_ENABLED = all(_keycloak_configured)
+OIDC_CREATE_USER = False
+if KEYCLOAK_SSO_ENABLED:
+    AUTHENTICATION_BACKENDS = [
+        'apps.users.auth.KeycloakOIDCAuthenticationBackend',
+    ]
+    _keycloak_issuer = (
+        f'{_keycloak_server_url}/realms/{quote(_keycloak_realm, safe="")}'
+    )
+    OIDC_RP_CLIENT_ID = _keycloak_client_id
+    OIDC_RP_CLIENT_SECRET = _keycloak_client_secret
+    OIDC_RP_SIGN_ALGO = 'RS256'
+    _oidc_scopes = ['openid', 'email', 'profile']
+    if KEYCLOAK_GROUPS_SCOPE and KEYCLOAK_GROUPS_SCOPE not in _oidc_scopes:
+        _oidc_scopes.append(KEYCLOAK_GROUPS_SCOPE)
+    OIDC_RP_SCOPES = ' '.join(_oidc_scopes)
+    OIDC_USE_PKCE = True
+    OIDC_CREATE_USER = True
+    OIDC_CALLBACK_CLASS = 'apps.users.auth.KeycloakOIDCCallbackView'
+    OIDC_AUTHENTICATE_CLASS = 'apps.users.auth.KeycloakOIDCRequestView'
+    OIDC_OP_AUTHORIZATION_ENDPOINT = f'{_keycloak_issuer}/protocol/openid-connect/auth'
+    OIDC_OP_TOKEN_ENDPOINT = f'{_keycloak_issuer}/protocol/openid-connect/token'
+    OIDC_OP_USER_ENDPOINT = f'{_keycloak_issuer}/protocol/openid-connect/userinfo'
+    OIDC_OP_JWKS_ENDPOINT = f'{_keycloak_issuer}/protocol/openid-connect/certs'
+    LOGIN_REDIRECT_URL = '/'
+    LOGIN_REDIRECT_URL_FAILURE = '/?sso=denied'
+    LOGOUT_REDIRECT_URL = '/'
 
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -89,6 +149,21 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = 'static/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'loggers': {
+        'apps.users.auth': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 CHANNEL_LAYERS = {
     'default': {

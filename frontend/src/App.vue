@@ -35,6 +35,7 @@ watch(app.selected, () => {
       v-if="app.stage.value === 'login'"
       :busy="app.busy.value"
       :error="app.error.value"
+      :sso-enabled="app.ssoEnabled.value"
       @submit="app.signIn"
     />
     <MissionSelectView
@@ -49,6 +50,6 @@ watch(app.selected, () => {
     <PatientsView v-else-if="activeView === 'patients'" :mission="app.selected.value" />
     <MapView v-else-if="activeView === 'map'" :key="app.selected.value.id" :mission="app.selected.value" :user="app.user.value" />
     <TeamsView v-else-if="activeView === 'teams'" :mission="app.selected.value" />
-    <DashboardView v-else :user="app.user.value" :mission="app.selected.value" @navigate="activeView = $event" />
+    <DashboardView v-else :mission="app.selected.value" @navigate="activeView = $event" />
   </BaseLayout>
 </template>

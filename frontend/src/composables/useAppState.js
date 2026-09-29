@@ -8,6 +8,7 @@ export function useAppState() {
   const selected = ref(null)
   const error = ref('')
   const busy = ref(false)
+  const ssoEnabled = ref(false)
   const active = computed(() => missions.value.filter((mission) => mission.state === 'ACTIVE'))
 
   async function loadMissions() {
@@ -17,7 +18,12 @@ export function useAppState() {
   async function restoreSession() {
     try {
       const session = await api('/auth/session/')
+      ssoEnabled.value = session.sso_enabled
       if (!session.authenticated) {
+        if (new URLSearchParams(window.location.search).get('sso') === 'denied') {
+          error.value = 'SSO-Anmeldung nicht möglich. Konto und Gruppenfreigabe prüfen.'
+          window.history.replaceState({}, '', window.location.pathname)
+        }
         stage.value = 'login'
         return
       }
@@ -84,5 +90,5 @@ export function useAppState() {
   }
 
   onMounted(restoreSession)
-  return { stage, user, active, selected, error, busy, signIn, createMission, openMission, showMissions, logout }
+  return { stage, user, active, selected, error, busy, ssoEnabled, signIn, createMission, openMission, showMissions, logout }
 }

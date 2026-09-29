@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -15,13 +16,18 @@ def _user_payload(user):
 @ensure_csrf_cookie
 def session_view(request):
     if not request.user.is_authenticated:
-        return Response({"authenticated": False})
-    return Response({"authenticated": True, "user": _user_payload(request.user)})
+        return Response({"authenticated": False, "sso_enabled": settings.KEYCLOAK_SSO_ENABLED})
+    return Response({"authenticated": True, "sso_enabled": settings.KEYCLOAK_SSO_ENABLED, "user": _user_payload(request.user)})
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request):
+    if settings.KEYCLOAK_SSO_ENABLED:
+        return Response(
+            {"detail": "Die Anmeldung erfolgt über Keycloak."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
     user = authenticate(request, username=request.data.get("username", "").strip(), password=request.data.get("password", ""))
     if user is None:
         return Response({"detail": "Benutzername oder Passwort ist nicht korrekt."}, status=status.HTTP_400_BAD_REQUEST)

@@ -15,7 +15,6 @@ function create() {
   <section class="content">
     <div class="heading">
       <div>
-        <p class="overline red">Einsatzübersicht</p>
         <h1>Einsatz auswählen</h1>
         <p class="muted">Wählen Sie einen laufenden Einsatz oder legen Sie einen neuen an.</p>
       </div>

@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.conf import settings
 from django.urls import include, path
 
 urlpatterns = [
@@ -26,3 +27,6 @@ urlpatterns = [
     path('api/', include('apps.patients.urls')),
     path('api/', include('apps.teams.urls')),
 ]
+
+if settings.KEYCLOAK_SSO_ENABLED:
+    urlpatterns.append(path('oidc/', include('mozilla_django_oidc.urls')))

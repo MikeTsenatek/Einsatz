@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { api } from '../api'
 
-const props = defineProps({ user: Object, mission: { type: Object, required: true } })
+const props = defineProps({ mission: { type: Object, required: true } })
 const emit = defineEmits(['navigate'])
 const now = ref(new Date())
 const loading = ref(false)
@@ -73,8 +73,8 @@ onBeforeUnmount(() => {
   <div class="dashboard">
     <section class="welcome">
       <div>
-        <p class="overline red">Lagezentrum</p><h1>Guten Tag, {{ user?.name }}.</h1>
-        <p class="muted">Aktuelle Übersicht für {{ mission.name }}.</p>
+        <h1>Übersicht</h1>
+        <p class="muted">Einsatz: {{ mission.name }}</p>
       </div>
       <strong>{{ time }} <small>Uhr</small></strong>
     </section>

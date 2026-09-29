@@ -59,6 +59,26 @@ die Django-Session-Authentifizierung und leitet API-Anfragen im Dev-Server an Po
 Ein Benutzer kann zunächst über die Django-Administration angelegt werden. Zum Erstellen
 eines Einsatzes benötigt er die Berechtigung `missions.add_mission`.
 
+### Keycloak-SSO
+
+Keycloak-SSO ist optional. In `.env` müssen `KEYCLOAK_SERVER_URL` (Basis-URL),
+`KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET` und
+`KEYCLOAK_REQUIRED_GROUP` gesetzt werden. Die Gruppenprüfung vergleicht den
+Gruppennamen exakt mit dem Claim `groups`; die Claim-Bezeichnung kann über
+`KEYCLOAK_GROUPS_CLAIM` angepasst werden. Die Anmeldung fordert standardmäßig
+`openid email profile groups` an. Der optionale Keycloak-Client-Scope `groups`
+muss existieren und dem Client zugewiesen sein; bei abweichendem Scope-Namen
+`KEYCLOAK_GROUPS_SCOPE` entsprechend setzen. Der Group-Membership-Mapper muss
+den Gruppen-Claim in die
+UserInfo-Antwort oder den ID-Token aufnehmen. Als
+Redirect-URI des Clients `https://<domain>/oidc/callback/` eintragen.
+
+Beim erfolgreichen ersten SSO-Login wird ein Konto automatisch angelegt, wenn
+der konfigurierte Gruppen-Claim die erforderliche Gruppe enthält. Das Konto
+wird aktiv angelegt; Vor- und Nachname werden aus den OIDC-Claims übernommen.
+Benutzer ohne passende Gruppe werden vor der Registrierung abgewiesen.
+Ohne vollständige Keycloak-Konfiguration bleibt SSO deaktiviert.
+
 ### Frontend-Struktur
 
 `frontend/src/layouts/BaseLayout.vue` ist das gemeinsame Basis-Template. Es enthält

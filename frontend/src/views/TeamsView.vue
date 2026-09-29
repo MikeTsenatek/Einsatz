@@ -1,8 +1,18 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { api } from '../api'
+import { hasPermission } from '../permissions'
 
-const props = defineProps({ mission: { type: Object, required: true } })
+const props = defineProps({ mission: { type: Object, required: true }, user: Object })
+const canAddDuty = computed(() => hasPermission(props.user, 'teams.add_helpermission'))
+const canAddHelper = computed(() => hasPermission(props.user, 'teams.add_helper'))
+const canChangeDuty = computed(() => hasPermission(props.user, 'teams.change_helpermission'))
+const canDeleteDuty = computed(() => hasPermission(props.user, 'teams.delete_helpermission'))
+const canAddTeam = computed(() => hasPermission(props.user, 'teams.add_team'))
+const canChangeTeam = computed(() => hasPermission(props.user, 'teams.change_team'))
+const canDeleteTeam = computed(() => hasPermission(props.user, 'teams.delete_team'))
+const canDeleteHelper = computed(() => hasPermission(props.user, 'teams.delete_helper'))
+const canSearchHelpers = computed(() => hasPermission(props.user, 'teams.view_helper'))
 const assignments = ref([])
 const teams = ref([])
 const newTeamName = ref('')
@@ -46,7 +56,7 @@ function stopHelperSearch() {
 watch([() => form.value.name, () => form.value.birthday, formOpen, editing], () => {
   stopHelperSearch()
   if (selectedHelper.value && (form.value.name !== selectedHelper.value.name || form.value.birthday !== (selectedHelper.value.birthday || ''))) selectedHelper.value = null
-  if (!formOpen.value || editing.value || selectedHelper.value || form.value.name.trim().length < 2) return
+  if (!canSearchHelpers.value || !formOpen.value || editing.value || selectedHelper.value || form.value.name.trim().length < 2) return
   helperSearchBusy.value = true
   helperSearchTimer = window.setTimeout(async () => {
     const request = new AbortController()
@@ -294,10 +304,10 @@ onMounted(load)
   <div class="teams-view">
     <div class="teams-heading">
       <div><p class="overline red">Einsatzpersonal</p><h1>Helfer</h1><p class="muted">{{ activeCount }} im Dienst · {{ assignments.length }} Dienstzeiten insgesamt</p></div>
-      <button class="primary small" @click="registerHelper">＋ Helfer registrieren</button>
+      <button v-if="canAddDuty && (canAddHelper || canSearchHelpers)" class="primary small" @click="registerHelper">＋ Helfer registrieren</button>
     </div>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
-    <form class="team-create" @submit.prevent="createTeam">
+    <form v-if="canAddTeam" class="team-create" @submit.prevent="createTeam">
       <input v-model.trim="newTeamName" maxlength="100" placeholder="Neues Team benennen" aria-label="Teamname">
       <button class="secondary" :disabled="!newTeamName.trim()">＋ Team anlegen</button>
     </form>
@@ -305,18 +315,18 @@ onMounted(load)
       <button class="secondary" :aria-pressed="!showArchive" @click="showArchive = false">Aktive Teams ({{ activeTeams.length }})</button>
       <button class="secondary" :aria-pressed="showArchive" @click="showArchive = true">Archiv ({{ archivedTeams.length }})</button>
     </div>
-    <p v-if="!loading && !visibleTeams.length" class="muted">{{ showArchive ? 'Keine archivierten Teams.' : 'Keine aktiven Teams.' }}</p>
+    <p v-if="!loading && !error && !visibleTeams.length" class="muted">{{ showArchive ? 'Keine archivierten Teams.' : 'Keine aktiven Teams.' }}</p>
     <section v-if="visibleTeams.length" class="team-list" aria-label="Teams">
       <article v-for="team in visibleTeams" :key="team.id">
         <div class="team-card__heading">
           <strong>{{ team.name }}</strong>
           <div class="team-card__actions">
-            <button type="button" class="icon-button" :disabled="teamSaving || endingTeamId !== null" :aria-label="team.name + ' bearbeiten'" title="Team bearbeiten" @click="editTeam(team)">✎</button>
-            <button type="button" class="icon-button danger-button" :disabled="teamSaving || endingTeamId !== null" :aria-label="team.name + ' löschen'" title="Team löschen" @click="deleteTeam(team)">⌫</button>
+            <button v-if="canChangeTeam" type="button" class="icon-button" :disabled="teamSaving || endingTeamId !== null" :aria-label="team.name + ' bearbeiten'" title="Team bearbeiten" @click="editTeam(team)">✎</button>
+            <button v-if="canDeleteTeam" type="button" class="icon-button danger-button" :disabled="teamSaving || endingTeamId !== null" :aria-label="team.name + ' löschen'" title="Team löschen" @click="deleteTeam(team)">⌫</button>
           </div>
         </div>
         <p v-if="team.end_date" class="team-planned-end">Dienst beendet: {{ formatDate(team.end_date) }}</p>
-        <button v-else class="secondary team-end-button" :disabled="teamSaving || saving || endingTeamId !== null" @click="endTeamDuty(team)">{{ endingTeamId === team.id ? 'Wird beendet …' : 'Teamdienst beenden' }}</button>
+        <button v-else-if="canChangeTeam && canChangeDuty" class="secondary team-end-button" :disabled="teamSaving || saving || endingTeamId !== null" @click="endTeamDuty(team)">{{ endingTeamId === team.id ? 'Wird beendet …' : 'Teamdienst beenden' }}</button>
         <div class="team-members">
           <span>Teammitglieder</span>
           <ul v-if="teamMembers(team.id).length">
@@ -349,12 +359,15 @@ onMounted(load)
       <div class="form-grid">
         <div class="helper-lookup">
           <label for="helper-name">Name</label>
-          <input id="helper-name" v-model.trim="form.name" required maxlength="100" autocomplete="off" :disabled="Boolean(editing)" aria-describedby="helper-search-status">
-          <p v-if="!editing" id="helper-search-status" class="helper-search-status" role="status">
+          <input id="helper-name" v-model.trim="form.name" required maxlength="100" autocomplete="off" :disabled="Boolean(editing) || (!canSearchHelpers && !canAddHelper)" aria-describedby="helper-search-status">
+          <p v-if="!editing && canSearchHelpers" id="helper-search-status" class="helper-search-status" role="status">
             {{ selectedHelper ? 'Vorhandener Helfer ausgewählt.' : helperSearchBusy ? 'Frühere Helferlisten werden durchsucht …' : helperSearchDone && !helperSuggestions.length ? 'Keine passenden Helfer gefunden.' : 'Ab zwei Zeichen werden vorhandene Helfer vorgeschlagen.' }}
           </p>
           <p v-if="helperSearchError" class="error" role="alert">Helfersuche: {{ helperSearchError }}</p>
-          <ul v-if="helperSuggestions.length" class="helper-suggestions" aria-label="Vorhandene Helfer">
+          <p v-if="!canSearchHelpers && !canAddHelper && !editing" class="muted" role="status">Für die Suche oder Neuanlage von Helfern fehlen Rechte.</p>
+          <p v-else-if="!canSearchHelpers && canAddHelper && !editing" class="muted" role="status">Vorhandene Helfer können nicht gesucht werden; neue Helfer können direkt angelegt werden.</p>
+          <p v-if="!canAddHelper && !editing && canSearchHelpers" class="muted" role="status">Es können nur vorhandene Helfer zugeordnet werden.</p>
+          <ul v-if="canSearchHelpers && helperSuggestions.length" class="helper-suggestions" aria-label="Vorhandene Helfer">
             <li v-for="helper in helperSuggestions" :key="helper.id">
               <button type="button" @click="selectHelper(helper)"><strong>{{ helper.name }}</strong><span>{{ helper.birthday ? 'Geboren: ' + helper.birthday : 'Geburtsdatum unbekannt' }} · Nr. {{ helper.id }}</span></button>
             </li>
@@ -381,11 +394,11 @@ onMounted(load)
           <td>{{ item.team?.name || '–' }}</td>
           <td>{{ formatDate(item.start_date) }}</td><td>{{ item.planned_end_date ? formatDate(item.planned_end_date) : (item.team?.planned_end_date ? formatDate(item.team.planned_end_date) + ' (Team)' : '–') }}</td><td>{{ item.end_date ? formatDate(item.end_date) : '–' }}</td>
           <td><span class="duty-status" :class="{ done: item.end_date }">{{ item.end_date ? 'Außer Dienst' : 'Im Dienst' }}</span></td>
-          <td><div class="helper-actions"><button :disabled="deletingHelperId !== null" @click="editAssignment(item)">Bearbeiten</button><button v-if="!item.end_date" :disabled="deletingHelperId !== null" @click="endDuty(item)">Dienst beenden</button><button class="danger-button" :disabled="deletingHelperId !== null || saving || endingTeamId !== null" @click="deleteHelper(item.helper)">{{ deletingHelperId === item.helper.id ? 'Wird gelöscht …' : 'Helfer vollständig löschen' }}</button></div></td>
+          <td><div class="helper-actions"><button v-if="canChangeDuty" :disabled="deletingHelperId !== null" @click="editAssignment(item)">Bearbeiten</button><button v-if="canChangeDuty && !item.end_date" :disabled="deletingHelperId !== null" @click="endDuty(item)">Dienst beenden</button><button v-if="canDeleteHelper && canDeleteDuty" class="danger-button" :disabled="deletingHelperId !== null || saving || endingTeamId !== null" @click="deleteHelper(item.helper)">{{ deletingHelperId === item.helper.id ? 'Wird gelöscht …' : 'Helfer vollständig löschen' }}</button></div></td>
         </tr></tbody>
       </table>
     </div>
-    <div v-else class="compact-empty">{{ showHelperArchive ? 'Keine beendeten Helferdienste für diesen Einsatz.' : 'Aktuell keine Helfer im Dienst.' }}</div>
+    <div v-else-if="!error" class="compact-empty">{{ showHelperArchive ? 'Keine beendeten Helferdienste für diesen Einsatz.' : 'Aktuell keine Helfer im Dienst.' }}</div>
   </div>
 </template>
 <style scoped>

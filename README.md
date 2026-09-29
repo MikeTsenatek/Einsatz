@@ -79,6 +79,17 @@ wird aktiv angelegt; Vor- und Nachname werden aus den OIDC-Claims übernommen.
 Benutzer ohne passende Gruppe werden vor der Registrierung abgewiesen.
 Ohne vollständige Keycloak-Konfiguration bleibt SSO deaktiviert.
 
+### Benutzerrechte
+
+Nach `migrate` erhalten alle bestehenden und neu angelegten Konten die Django-
+Gruppe `Standardbenutzer`. Sie erhält die Modellrechte für die operativen Apps
+Karte, Verwaltung, Einsätze, Patienten und Teams. Lese-, Anlege- und
+Änderungsrechte erlauben den normalen Betrieb; Löschrechte bleiben bewusst
+Administratoren vorbehalten. Die Gruppe verleiht weder Staff- noch
+Superuserstatus und enthält keine Rechte zur Benutzerverwaltung. Die API prüft
+Rechte serverseitig; die Oberfläche blendet nicht erlaubte Aktionen aus und
+zeigt fehlende Rechte verständlich an.
+
 ### Frontend-Struktur
 
 `frontend/src/layouts/BaseLayout.vue` ist das gemeinsame Basis-Template. Es enthält

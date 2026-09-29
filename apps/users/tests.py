@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.exceptions import SuspiciousOperation
 from django.test import override_settings
 from django.test import TestCase
@@ -6,6 +7,7 @@ from unittest.mock import patch
 
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 from .auth import KeycloakOIDCAuthenticationBackend
+from .permissions import DEFAULT_GROUP_NAME, ensure_standard_group
 
 
 class UserModelTests(TestCase):
@@ -18,6 +20,12 @@ class UserModelTests(TestCase):
         self.assertEqual(user.username, 'dispatcher')
         self.assertTrue(user.check_password('secure-password'))
         self.assertFalse(user.is_staff)
+        self.assertTrue(user.groups.filter(name='Standardbenutzer').exists())
+        self.assertTrue(user.has_perm('patients.view_patient'))
+        self.assertTrue(user.has_perm('teams.add_helpermission'))
+        self.assertTrue(user.has_perm('map.change_mapoverlay'))
+        self.assertFalse(user.has_perm('patients.delete_patient'))
+        self.assertFalse(user.has_perm('teams.delete_helper'))
 
     def test_create_superuser(self):
         user = get_user_model().objects.create_superuser(
@@ -28,6 +36,21 @@ class UserModelTests(TestCase):
 
         self.assertTrue(user.is_staff)
         self.assertTrue(user.is_superuser)
+        self.assertTrue(user.groups.filter(name='Standardbenutzer').exists())
+
+    def test_standard_group_is_not_an_admin_or_superuser_group(self):
+        group = Group.objects.get(name=DEFAULT_GROUP_NAME)
+        self.assertFalse(group.permissions.filter(content_type__app_label='users').exists())
+        self.assertFalse(group.permissions.filter(codename='delete_user').exists())
+        self.assertFalse(group.permissions.filter(codename__startswith='delete_').exists())
+
+    def test_migration_hook_backfills_existing_users(self):
+        user = get_user_model().objects.create_user(username='existing-dispatcher')
+        user.groups.clear()
+
+        ensure_standard_group(sender=None, using='default')
+
+        self.assertTrue(user.groups.filter(name=DEFAULT_GROUP_NAME).exists())
 
 
 @override_settings(
@@ -82,6 +105,29 @@ class KeycloakGroupAccessTests(TestCase):
 
         self.assertEqual(claims['groups'], ['/einsatzleitung'])
 
+    @override_settings(KEYCLOAK_REQUIRED_GROUP='einsatzverwaltung')
+    def test_merges_group_claims_from_userinfo_and_id_token(self):
+        backend = KeycloakOIDCAuthenticationBackend()
+        with patch.object(
+            OIDCAuthenticationBackend,
+            'get_userinfo',
+            return_value={
+                'email': 'user@example.org',
+                'groups': ['digitalfunk'],
+            },
+        ):
+            claims = backend.get_userinfo(
+                'access-token',
+                'id-token',
+                {'groups': ['einsatzverwaltung']},
+            )
+
+        self.assertEqual(
+            claims['groups'],
+            ['digitalfunk', 'einsatzverwaltung'],
+        )
+        self.assertTrue(backend.verify_claims(claims))
+
     def test_logs_scopes_and_group_claim_sources_when_group_is_absent(self):
         backend = KeycloakOIDCAuthenticationBackend()
         with patch.object(
@@ -92,8 +138,8 @@ class KeycloakGroupAccessTests(TestCase):
             backend.get_userinfo('access-token', 'id-token', {})
 
         self.assertIn("scopes='openid email'", logs.output[0])
-        self.assertIn('ID-Token-Gruppen=None', logs.output[0])
-        self.assertIn('UserInfo-Gruppen=None', logs.output[0])
+        self.assertIn('ID-Token-Gruppen=[]', logs.output[0])
+        self.assertIn('UserInfo-Gruppen=[]', logs.output[0])
 
     @override_settings(OIDC_CREATE_USER=True)
     def test_registers_active_user_when_group_matches(self):
@@ -114,6 +160,7 @@ class KeycloakGroupAccessTests(TestCase):
         self.assertEqual(user.email, 'new-user@example.org')
         self.assertEqual(user.first_name, 'Erika')
         self.assertEqual(user.last_name, 'Muster')
+        self.assertTrue(user.groups.filter(name='Standardbenutzer').exists())
 
     @override_settings(OIDC_CREATE_USER=True)
     def test_does_not_register_user_when_group_does_not_match(self):

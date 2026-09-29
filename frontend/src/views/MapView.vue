@@ -3,10 +3,16 @@ import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { api } from '../api'
+import { hasPermission } from '../permissions'
 import { createGeoJSONLayers } from '../map/geojson'
 import { calibrate, cornerKeys, legacyPoints, validLocation, project, unproject } from '../map/calibration'
 
 const props = defineProps({ mission: Object, user: Object })
+const hasSavedOverlay = ref(false)
+const canSaveOverlay = computed(() => hasPermission(props.user, hasSavedOverlay.value ? 'map.change_mapoverlay' : 'map.add_mapoverlay'))
+const canEditMap = canSaveOverlay
+const canImportGeoJSON = computed(() => hasPermission(props.user, 'map.add_geojsonimport'))
+const canSaveSearchConfig = computed(() => hasPermission(props.user, 'map.change_mapoverlay'))
 const canvas = ref(null)
 const editing = ref(false)
 const editorOpen = ref(false)
@@ -287,6 +293,7 @@ async function save() {
   busy.value = true; error.value = ''; notice.value = ''
   try {
     saved = await api(`/missions/${props.mission.id}/map/`, { method: 'PUT', body: JSON.stringify({ ...draft.value, corners: calibration.value.corners }), signal: controller.signal })
+    hasSavedOverlay.value = true
     draft.value = restore(saved); editing.value = false; notice.value = 'Kartenoverlay gespeichert.'
   } catch (e) { if (!disposed) error.value = e.message }
   finally { busy.value = false }
@@ -324,7 +331,7 @@ onMounted(async () => {
     if (disposed) return
     const failures = []
     if (overlayResult.status === 'fulfilled') {
-      saved = overlayResult.value; draft.value = restore(saved); render()
+      saved = overlayResult.value; hasSavedOverlay.value = Boolean(saved); draft.value = restore(saved); render()
     } else failures.push(overlayResult.reason.message)
     if (geojsonResult.status === 'fulfilled') {
       geojsonImports.value = geojsonResult.value
@@ -348,13 +355,13 @@ onBeforeUnmount(() => { disposed = true; controller.abort(); observer?.disconnec
     <div class="map-controls">
       <div class="map-toolbar" role="group" aria-label="Kartenaktionen">
         <button :disabled="(!validPoints || !draft.image) && !geojsonCount" title="Karteninhalte anzeigen" @click="fit">⌖ Ausschnitt</button>
-        <button v-if="user?.is_staff && !editing" :disabled="loading || !map" @click="begin">Adminmodus</button>
+        <button v-if="(canEditMap || canImportGeoJSON) && !editing" :disabled="loading || !map" @click="begin">Adminmodus</button>
         <template v-if="editing">
-          <button :disabled="busy" @click="imageInput.click()">Grafik laden</button>
-          <button :disabled="busy" @click="geojsonInput.click()">GeoJSON importieren</button>
-          <button :disabled="busy || !draft.image" @click="addPoint">＋ Stützpunkt</button>
-          <button :aria-expanded="editorOpen" aria-controls="map-editor" @click="editorOpen = !editorOpen">Stützpunkte {{ draft.control_points.length }} <span aria-hidden="true">{{ editorOpen ? '▴' : '▾' }}</span></button>
-          <button class="save-button" :disabled="busy || !draft.image || !validPoints" @click="save">{{ busy ? 'Speichert …' : 'Speichern' }}</button>
+          <button v-if="canEditMap" :disabled="busy" @click="imageInput.click()">Grafik laden</button>
+          <button v-if="canImportGeoJSON" :disabled="busy" @click="geojsonInput.click()">GeoJSON importieren</button>
+          <button v-if="canEditMap" :disabled="busy || !draft.image" @click="addPoint">＋ Stützpunkt</button>
+          <button v-if="canEditMap" :aria-expanded="editorOpen" aria-controls="map-editor" @click="editorOpen = !editorOpen">Stützpunkte {{ draft.control_points.length }} <span aria-hidden="true">{{ editorOpen ? '▴' : '▾' }}</span></button>
+          <button v-if="canEditMap" class="save-button" :disabled="busy || !canSaveOverlay || !draft.image || !validPoints" @click="save">{{ busy ? 'Speichert …' : 'Speichern' }}</button>
           <button :disabled="busy" @click="cancel">Abbrechen</button>
         </template>
       </div>
@@ -376,7 +383,7 @@ onBeforeUnmount(() => { disposed = true; controller.abort(); observer?.disconnec
             <legend>Im Treffer anzeigen</legend>
             <label v-for="field in geojsonSearchFields" :key="`result-${field.value}`"><input type="checkbox" :checked="selectedResultFields.includes(field.value)" @change="toggleResultField(field.value)" /> {{ field.label }}</label>
           </fieldset>
-          <button v-if="user?.is_staff" type="button" :disabled="busy" @click="saveSearchConfig">Suchkonfiguration speichern</button>
+          <button v-if="canSaveSearchConfig" type="button" :disabled="busy" @click="saveSearchConfig">Suchkonfiguration speichern</button>
         </details>
         <div v-if="searchResults.length" class="search-results" role="listbox" aria-label="Suchergebnisse">
           <button v-for="result in searchResults" :key="`${result.imported.id}-${result.index}`" type="button" role="option" @click="focusSearchResult(result)">
@@ -385,13 +392,13 @@ onBeforeUnmount(() => { disposed = true; controller.abort(); observer?.disconnec
         </div>
         <p v-else-if="geojsonSearch.trim() && geojsonImports.length" class="search-empty">Keine Treffer</p>
       </div>
-      <input ref="imageInput" class="file-input" type="file" aria-label="Grafik (max. 1 MB)" accept=".svg,.png,.jpg,.jpeg,.gif,.webp" :disabled="busy" @change="imageFile" />
-      <input ref="geojsonInput" class="file-input" type="file" aria-label="GeoJSON-Datei" accept=".geojson,.json,application/geo+json,application/json" :disabled="busy" @change="importGeoJSON" />
-      <input ref="pointsInput" class="file-input" type="file" aria-label="Stützpunkte importieren" accept=".json,application/json" :disabled="busy" @change="importCorners" />
+      <input v-if="canEditMap" ref="imageInput" class="file-input" type="file" aria-label="Grafik (max. 1 MB)" accept=".svg,.png,.jpg,.jpeg,.gif,.webp" :disabled="busy" @change="imageFile" />
+      <input v-if="canImportGeoJSON" ref="geojsonInput" class="file-input" type="file" aria-label="GeoJSON-Datei" accept=".geojson,.json,application/geo+json,application/json" :disabled="busy" @change="importGeoJSON" />
+      <input v-if="canEditMap" ref="pointsInput" class="file-input" type="file" aria-label="Stützpunkte importieren" accept=".json,application/json" :disabled="busy" @change="importCorners" />
       <p v-if="loading" class="map-message" role="status">Karte wird geladen …</p>
       <p v-if="error" class="map-message map-error" role="alert">{{ error }} <button aria-label="Fehlermeldung schließen" @click="error = ''">×</button></p>
       <p v-if="notice" class="map-message" role="status">{{ notice }} <button aria-label="Meldung schließen" @click="notice = ''">×</button></p>
-      <form v-if="editing && editorOpen" id="map-editor" class="map-editor" @submit.prevent="save">
+      <form v-if="editing && editorOpen && canEditMap" id="map-editor" class="map-editor" @submit.prevent="save">
         <fieldset :disabled="busy">
           <div class="editor-heading"><strong :title="draft.name">{{ draft.name || 'Grafik laden' }}</strong><button type="button" aria-label="Stützpunkte einklappen" @click="editorOpen = false">×</button></div>
           <div v-if="draft.image" class="image-picker" @click="selectImagePosition">

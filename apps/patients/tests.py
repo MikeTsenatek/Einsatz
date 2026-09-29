@@ -27,6 +27,7 @@ class PatientAdminTests(SimpleTestCase):
 class PermissionTestCase(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username="dispatcher")
+        self.user.groups.clear()
         self.client.force_authenticate(self.user)
         self.mission = Mission.objects.create(name="Testmission")
         self.patient = Patient.objects.create(
@@ -89,7 +90,9 @@ class PatientApiTests(PermissionTestCase):
         list_url = reverse("patient-list")
         detail_url = reverse("patient-detail", args=(self.patient.pk,))
 
-        self.assertEqual(self.client.get(list_url).status_code, status.HTTP_403_FORBIDDEN)
+        denied = self.client.get(list_url)
+        self.assertEqual(denied.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("patients.view_patient", denied.data["detail"])
         self.grant("view_patient")
         self.assertEqual(self.client.get(list_url).status_code, status.HTTP_200_OK)
 

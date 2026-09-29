@@ -16,36 +16,46 @@ export function useAppState() {
   }
 
   async function restoreSession() {
+    let session
     try {
-      const session = await api('/auth/session/')
-      ssoEnabled.value = session.sso_enabled
-      if (!session.authenticated) {
-        if (new URLSearchParams(window.location.search).get('sso') === 'denied') {
-          error.value = 'SSO-Anmeldung nicht möglich. Konto und Gruppenfreigabe prüfen.'
-          window.history.replaceState({}, '', window.location.pathname)
-        }
-        stage.value = 'login'
-        return
-      }
-      user.value = session.user
-      await loadMissions()
-      stage.value = 'missions'
-    } catch {
+      session = await api('/auth/session/')
+    } catch (requestError) {
+      error.value = requestError.message
       stage.value = 'login'
+      return
+    }
+    ssoEnabled.value = session.sso_enabled
+    if (!session.authenticated) {
+      if (new URLSearchParams(window.location.search).get('sso') === 'denied') {
+        error.value = 'SSO-Anmeldung fehlgeschlagen. Benutzerkonto und Gruppenfreigabe prüfen.'
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+      stage.value = 'login'
+      return
+    }
+    user.value = session.user
+    stage.value = 'missions'
+    try {
+      await loadMissions()
+    } catch (requestError) {
+      missions.value = []
+      error.value = requestError.message
     }
   }
 
   async function signIn(credentials) {
     busy.value = true
     error.value = ''
+    user.value = null
+    missions.value = []
     try {
       const response = await api('/auth/login/', {
         method: 'POST',
         body: JSON.stringify(credentials),
       })
       user.value = response.user
-      await loadMissions()
       stage.value = 'missions'
+      await loadMissions()
     } catch (requestError) {
       error.value = requestError.message
     } finally {

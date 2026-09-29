@@ -1,8 +1,11 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { api } from '../api'
+import { hasPermission } from '../permissions'
 
 const props = defineProps({ mission: { type: Object, required: true }, user: Object })
+const canCreateEntry = computed(() => hasPermission(props.user, 'missions.add_operationlogentry'))
+const canChangeEntry = computed(() => hasPermission(props.user, 'missions.change_operationlogentry'))
 const entries = ref([])
 const priorities = ref([])
 const loading = ref(true)
@@ -200,7 +203,7 @@ onMounted(load)
         <h1>Einsatztagebuch</h1>
         <p class="muted">{{ totalEntries }} protokollierte {{ totalEntries === 1 ? 'Meldung' : 'Meldungen' }}</p>
       </div>
-      <button class="primary small" @click="startCreate">＋ Neuer Eintrag</button>
+      <button v-if="canCreateEntry" class="primary small" @click="startCreate">＋ Neuer Eintrag</button>
     </div>
 
     <form v-if="showForm" class="operation-log-form" @submit.prevent="saveEntry">
@@ -239,7 +242,7 @@ onMounted(load)
               <td class="route-cell">{{ entry.sender || '–' }}</td>
               <td class="route-cell">{{ entry.recipient || '–' }}</td>
               <td class="message-cell"><p>{{ entry.text }}</p><div v-if="entry.measure"><span>Maßnahme</span>{{ entry.measure }}</div></td>
-              <td><div class="operation-log-entry__actions"><button v-if="!entry.is_struck_out" @click="startEdit(entry)">Bearbeiten</button><button @click="toggleHistory(entry)">{{ openHistoryId === entry.id ? 'Verlauf schließen' : 'Verlauf' }}</button><button v-if="!entry.is_struck_out" class="strike-button" @click="strikeEntry(entry)">Streichen</button></div></td>
+              <td><div class="operation-log-entry__actions"><button v-if="canChangeEntry && !entry.is_struck_out" @click="startEdit(entry)">Bearbeiten</button><button @click="toggleHistory(entry)">{{ openHistoryId === entry.id ? 'Verlauf schließen' : 'Verlauf' }}</button><button v-if="canChangeEntry && !entry.is_struck_out" class="strike-button" @click="strikeEntry(entry)">Streichen</button></div></td>
             </tr>
             <tr v-if="openHistoryId === entry.id" class="operation-log-history-row">
               <td colspan="6">
@@ -259,7 +262,7 @@ onMounted(load)
         </tbody>
       </table>
     </div>
-    <div v-else class="operation-log-empty"><i aria-hidden="true">☷</i><h3>Keine Einträge gefunden</h3><p>{{ entries.length ? 'Passen Sie Suche oder Filter an.' : 'Erfassen Sie den ersten Eintrag für diesen Einsatz.' }}</p></div>
+    <div v-else-if="!error" class="operation-log-empty"><i aria-hidden="true">☷</i><h3>Keine Einträge gefunden</h3><p>{{ entries.length ? 'Passen Sie Suche oder Filter an.' : 'Erfassen Sie den ersten Eintrag für diesen Einsatz.' }}</p></div>
     <nav v-if="totalPages > 1" class="pagination" aria-label="ETB-Seiten"><button class="secondary" :disabled="currentPage === 1 || loading" @click="load(currentPage - 1)">← Zurück</button><span>Seite {{ currentPage }} von {{ totalPages }}</span><button class="secondary" :disabled="currentPage === totalPages || loading" @click="load(currentPage + 1)">Weiter →</button></nav>
   </div>
 </template>

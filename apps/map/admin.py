@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from django import forms
 from django.contrib import admin
+from django.core.exceptions import PermissionDenied
 from rest_framework.exceptions import ValidationError
 
 from .geojson import feature_coordinate_records, validate_geojson
@@ -132,8 +133,38 @@ class GeoJSONFeatureInline(admin.TabularInline):
     show_change_link = True
 
 
+class PermissionCheckedModelAdmin(admin.ModelAdmin):
+    """Ensure view-only users cannot submit writes to a change form."""
+
+    def require_write_permission(self, request, obj=None, change=False):
+        action = "change" if change else "add"
+        permission = f"{self.opts.app_label}.{action}_{self.opts.model_name}"
+        if not request.user.has_perm(permission):
+            raise PermissionDenied
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        if request.method == "POST":
+            obj = self.get_object(request, object_id) if object_id else None
+            allowed = (
+                self.has_add_permission(request)
+                if object_id is None
+                else self.has_change_permission(request, obj)
+            )
+            if not allowed:
+                raise PermissionDenied
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def save_model(self, request, obj, form, change):
+        self.require_write_permission(request, obj, change)
+        super().save_model(request, obj, form, change)
+
+    def save_formset(self, request, form, formset, change):
+        self.require_write_permission(request, form.instance, change)
+        super().save_formset(request, form, formset, change)
+
+
 @admin.register(GeoJSONImport)
-class GeoJSONImportAdmin(admin.ModelAdmin):
+class GeoJSONImportAdmin(PermissionCheckedModelAdmin):
     list_display = ('name', 'mission', 'feature_count', 'created_at')
     list_filter = ('mission',)
     search_fields = ('name', 'mission__name')
@@ -196,7 +227,7 @@ class GeoJSONImportAdmin(admin.ModelAdmin):
         return False
 
 @admin.register(GeoJSONFeature)
-class GeoJSONFeatureAdmin(admin.ModelAdmin):
+class GeoJSONFeatureAdmin(PermissionCheckedModelAdmin):
     list_display = ('__str__', 'geojson_import', 'feature_index', 'coordinate_count')
     list_filter = ('geojson_import',)
     search_fields = ('identifier', 'geojson_import__name')
@@ -219,6 +250,7 @@ class GeoJSONFeatureAdmin(admin.ModelAdmin):
         return super().change_view(request, object_id, form_url, extra_context)
 
     def save_formset(self, request, form, formset, change):
+        self.require_write_permission(request, form.instance, change)
         instances = formset.save(commit=False)
         deleted_paths = [tuple(item.path) for item in formset.deleted_objects]
         for deleted in formset.deleted_objects:

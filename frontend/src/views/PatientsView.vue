@@ -1,8 +1,14 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
+import { hasPermission } from '../permissions'
 
-const props = defineProps({ mission: { type: Object, required: true } })
+const props = defineProps({ mission: { type: Object, required: true }, user: Object })
+const canAddTreatment = computed(() => hasPermission(props.user, 'patients.add_treatment'))
+const canChangeTreatment = computed(() => hasPermission(props.user, 'patients.change_treatment'))
+const canDeleteTreatment = computed(() => hasPermission(props.user, 'patients.delete_treatment'))
+const canChangePatient = computed(() => hasPermission(props.user, 'patients.change_patient'))
+const canDeletePatient = computed(() => hasPermission(props.user, 'patients.delete_patient'))
 const treatments = ref([])
 const treatmentKeywords = ref([])
 const keywordAutocompleteOpen = ref(false)
@@ -274,6 +280,11 @@ function patientDataChanged() {
 
 async function searchPatients() {
   if (treatmentForm.value.patient) return
+  if (!hasPermission(props.user, 'patients.view_patient')) {
+    patientSuggestions.value = []
+    patientAutocompleteOpen.value = false
+    return
+  }
   const name = treatmentForm.value.patient_name.trim()
   if (name.length < 2) return
   const params = new URLSearchParams({ mission: props.mission.id, name })
@@ -283,8 +294,10 @@ async function searchPatients() {
   try {
     patientSuggestions.value = await api('/patients/search/?' + params)
     patientAutocompleteOpen.value = true
-  } catch {
+  } catch (requestError) {
     patientSuggestions.value = []
+    patientAutocompleteOpen.value = false
+    error.value = requestError.message
   }
 }
 
@@ -340,7 +353,7 @@ onMounted(load)
   <div class="patients-view">
     <div class="patients-heading">
       <div><p class="overline red">Patientenversorgung</p><h1>Behandlungen</h1><p class="muted">{{ totalTreatments }} Behandlungen · {{ unassignedCount }} auf dieser Seite nicht zugeordnet</p></div>
-      <div><button class="primary small" @click="startTreatment">＋ Behandlung</button></div>
+      <div><button v-if="canAddTreatment" class="primary small" @click="startTreatment">＋ Behandlung</button></div>
     </div>
 
     <p v-if="error" class="error" role="alert">{{ error }}</p>
@@ -348,7 +361,7 @@ onMounted(load)
     <form v-if="panel === 'treatment'" class="patient-form" @submit.prevent="saveTreatment">
       <div><h3>{{ editingTreatment ? 'Behandlung bearbeiten' : 'Behandlung beginnen' }}</h3><p class="muted">Sie kann ohne Patient begonnen, aber erst nach einer Zuordnung abgeschlossen werden.</p></div>
       <div class="form-grid">
-        <div class="patient-capture form-grid__wide"><p>Patient <small>für Beginn optional</small></p><div class="form-grid"><label>Name<span class="autocomplete"><input v-model="treatmentForm.patient_name" maxlength="100" autocomplete="off" placeholder="Name eingeben" @input="patientDataChanged" @focus="searchPatients" @blur="closePatientAutocomplete"><ul v-if="patientAutocompleteOpen && patientSuggestions.length" role="listbox"><li v-for="patient in patientSuggestions" :key="patient.id" role="option" @mousedown.prevent="selectPatient(patient)"><strong>{{ patient.name }}</strong><small>{{ patient.birthday || (patient.age ? patient.age + ' Jahre' : 'Geburtsdatum unbekannt') }}</small></li></ul></span></label><label>Geburtsdatum <small>optional</small><input v-model="treatmentForm.patient_birthday" type="date" @input="syncTreatmentAge"></label><label>Alter <small>{{ treatmentForm.patient_birthday ? 'aus Geburtsdatum berechnet' : 'optional' }}</small><input v-model.number="treatmentForm.patient_age" type="number" min="0" max="130" :disabled="Boolean(treatmentForm.patient_birthday)" @input="patientDataChanged"></label></div><span v-if="treatmentForm.patient" class="matched-patient">✓ Verknüpfter Patient – Änderungen aktualisieren seine Stammdaten</span><span v-else-if="treatmentForm.patient_name.trim()" class="new-patient">Neuer Patient, falls kein eindeutiger Treffer vorhanden ist</span></div><label>Beginn<input v-model="treatmentForm.start_date" required type="datetime-local"></label><label v-if="editingTreatment">Ende <small>nur mit Patient</small><input v-model="treatmentForm.end_date" type="datetime-local" :disabled="!treatmentForm.patient && !treatmentForm.patient_name.trim()"></label>
+        <div class="patient-capture form-grid__wide"><p>Patient <small>für Beginn optional</small></p><div class="form-grid"><label>Name<span class="autocomplete"><input v-model="treatmentForm.patient_name" maxlength="100" autocomplete="off" placeholder="Name eingeben" :disabled="Boolean(editingTreatment && treatmentForm.patient && !canChangePatient)" @input="patientDataChanged" @focus="searchPatients" @blur="closePatientAutocomplete"><ul v-if="patientAutocompleteOpen && patientSuggestions.length" role="listbox"><li v-for="patient in patientSuggestions" :key="patient.id" role="option" @mousedown.prevent="selectPatient(patient)"><strong>{{ patient.name }}</strong><small>{{ patient.birthday || (patient.age ? patient.age + ' Jahre' : 'Geburtsdatum unbekannt') }}</small></li></ul></span></label><label>Geburtsdatum <small>optional</small><input v-model="treatmentForm.patient_birthday" type="date" :disabled="Boolean(editingTreatment && treatmentForm.patient && !canChangePatient)" @input="syncTreatmentAge"></label><label>Alter <small>{{ treatmentForm.patient_birthday ? 'aus Geburtsdatum berechnet' : 'optional' }}</small><input v-model.number="treatmentForm.patient_age" type="number" min="0" max="130" :disabled="Boolean(treatmentForm.patient_birthday) || Boolean(editingTreatment && treatmentForm.patient && !canChangePatient)" @input="patientDataChanged"></label></div><span v-if="treatmentForm.patient" class="matched-patient">✓ Verknüpfter Patient – Änderungen aktualisieren seine Stammdaten</span><span v-else-if="treatmentForm.patient_name.trim()" class="new-patient">Neuer Patient, falls kein eindeutiger Treffer vorhanden ist</span></div><label>Beginn<input v-model="treatmentForm.start_date" required type="datetime-local"></label><label v-if="editingTreatment">Ende <small>nur mit Patient</small><input v-model="treatmentForm.end_date" type="datetime-local" :disabled="!treatmentForm.patient && !treatmentForm.patient_name.trim()"></label>
         <label>Stichwort <small>zum Abschließen erforderlich · Freitext</small><span class="autocomplete"><input v-model="treatmentForm.keyword" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" :aria-expanded="keywordAutocompleteOpen" :aria-activedescendant="activeKeywordIndex >= 0 ? 'keyword-option-' + activeKeywordIndex : undefined" aria-controls="keyword-suggestions" placeholder="Stichwort eingeben" @focus="keywordAutocompleteOpen = true" @input="keywordAutocompleteOpen = true; activeKeywordIndex = -1" @blur="closeKeywordAutocomplete" @keydown.down.prevent="moveKeywordSelection(1)" @keydown.up.prevent="moveKeywordSelection(-1)" @keydown.enter="selectActiveKeyword($event)" @keydown.esc="keywordAutocompleteOpen = false"><ul v-if="keywordAutocompleteOpen && filteredKeywords.length" id="keyword-suggestions" role="listbox"><li v-for="(keyword, index) in filteredKeywords" :id="'keyword-option-' + index" :key="keyword.id" role="option" :aria-selected="index === activeKeywordIndex" :class="{ active: index === activeKeywordIndex }" @mouseenter="activeKeywordIndex = index" @mousedown.prevent="selectKeyword(keyword)">{{ keyword.name }}</li></ul></span></label>
         <label class="form-grid__wide">Notizen <small>optional</small><textarea v-model.trim="treatmentForm.notes" rows="3"></textarea></label>
       </div>
@@ -374,7 +387,7 @@ onMounted(load)
         <div v-else class="compact-empty">Keine bisherigen Behandlungen vorhanden.</div>
         <nav v-if="historyTotalPages > 1" class="pagination" aria-label="Historienseiten"><button class="secondary" :disabled="historyPage === 1 || historyLoading" @click="loadPatientHistory(historyPatient.id, historyPage - 1)">← Zurück</button><span>Seite {{ historyPage }} von {{ historyTotalPages }}</span><button class="secondary" :disabled="historyPage === historyTotalPages || historyLoading" @click="loadPatientHistory(historyPatient.id, historyPage + 1)">Weiter →</button></nav>
       </section>
-      <div class="operation-log-form__actions"><button v-if="originalPatient" type="button" class="danger-button" @click="deletePatient(originalPatient)">Patient mit Behandlungen löschen</button><button type="button" class="secondary" @click="closeTreatmentForm">Abbrechen</button><button class="primary small" :disabled="saving">{{ editingTreatment ? 'Änderungen speichern' : 'Behandlung anlegen' }}</button></div>
+      <div class="operation-log-form__actions"><button v-if="originalPatient && canDeletePatient && canDeleteTreatment" type="button" class="danger-button" @click="deletePatient(originalPatient)">Patient mit Behandlungen löschen</button><button type="button" class="secondary" @click="closeTreatmentForm">Abbrechen</button><button class="primary small" :disabled="saving">{{ editingTreatment ? 'Änderungen speichern' : 'Behandlung anlegen' }}</button></div>
     </form>
 
 
@@ -389,15 +402,15 @@ onMounted(load)
             <tbody>
               <tr v-for="treatment in treatments" :key="treatment.id">
                 <td><time>{{ formatDate(treatment.start_date) }}</time><small v-if="treatment.end_date">bis {{ formatDate(treatment.end_date) }}</small></td>
-                <td><button v-if="treatment.patient" type="button" class="treatment-patient-link" @click="editTreatment(treatment)"><strong>{{ treatment.patient.display_name }}</strong><small>{{ treatment.patient.birthday || (treatment.patient.age != null ? treatment.patient.age + ' Jahre' : 'Geburtsdatum unbekannt') }}</small></button><span v-else class="muted">Nicht zugeordnet</span></td>
+                <td><button v-if="treatment.patient && canChangeTreatment" type="button" class="treatment-patient-link" @click="editTreatment(treatment)"><strong>{{ treatment.patient.display_name }}</strong><small>{{ treatment.patient.birthday || (treatment.patient.age != null ? treatment.patient.age + ' Jahre' : 'Geburtsdatum unbekannt') }}</small></button><span v-else-if="treatment.patient" class="treatment-patient-link"><strong>{{ treatment.patient.display_name }}</strong><small>{{ treatment.patient.birthday || (treatment.patient.age != null ? treatment.patient.age + ' Jahre' : 'Geburtsdatum unbekannt') }}</small></span><span v-else class="muted">Nicht zugeordnet</span></td>
                 <td><strong>{{ treatment.keyword || '–' }}</strong></td>
                 <td><span class="treatment-status" :class="{ done: treatment.end_date }">{{ treatment.end_date ? 'Abgeschlossen' : 'Laufend' }}</span></td>
-                <td><div class="treatment-table-actions"><button @click="editTreatment(treatment)">Bearbeiten</button><button v-if="!treatment.end_date" :disabled="!treatment.patient || !treatment.keyword?.trim()" :title="!treatment.patient ? 'Zum Abschließen zuerst einen Patienten zuordnen' : !treatment.keyword?.trim() ? 'Zum Abschließen ist ein Stichwort erforderlich' : 'Behandlung jetzt abschließen'" @click="completeTreatment(treatment)">Abschließen</button><button class="danger-button" @click="deleteTreatment(treatment)">Löschen</button></div></td>
+                <td><div class="treatment-table-actions"><button v-if="canChangeTreatment" @click="editTreatment(treatment)">Bearbeiten</button><button v-if="canChangeTreatment && !treatment.end_date" :disabled="!treatment.patient || !treatment.keyword?.trim()" :title="!treatment.patient ? 'Zum Abschließen zuerst einen Patienten zuordnen' : !treatment.keyword?.trim() ? 'Zum Abschließen ist ein Stichwort erforderlich' : 'Behandlung jetzt abschließen'" @click="completeTreatment(treatment)">Abschließen</button><button v-if="canDeleteTreatment" class="danger-button" @click="deleteTreatment(treatment)">Löschen</button></div></td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div v-else class="compact-empty">Noch keine Behandlung erfasst.</div>
+        <div v-else-if="!error" class="compact-empty">Noch keine Behandlung erfasst.</div>
       </section>
 
       <nav v-if="totalPages > 1" class="pagination" aria-label="Behandlungsseiten"><button class="secondary" :disabled="currentPage === 1 || loading" @click="load(currentPage - 1)">← Zurück</button><span>Seite {{ currentPage }} von {{ totalPages }}</span><button class="secondary" :disabled="currentPage === totalPages || loading" @click="load(currentPage + 1)">Weiter →</button></nav>

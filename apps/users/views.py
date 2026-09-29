@@ -8,7 +8,13 @@ from rest_framework.response import Response
 
 
 def _user_payload(user):
-    return {"is_staff": user.is_staff, "id": user.pk, "username": user.get_username(), "name": user.get_full_name() or user.get_username()}
+    return {
+        "is_staff": user.is_staff,
+        "id": user.pk,
+        "username": user.get_username(),
+        "name": user.get_full_name() or user.get_username(),
+        "permissions": sorted(user.get_all_permissions()),
+    }
 
 
 @api_view(["GET"])

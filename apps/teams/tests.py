@@ -14,6 +14,7 @@ from .models import Helper, HelperMission, Team
 class HelperMissionApiTests(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username="team-user")
+        self.user.groups.clear()
         self.client.force_authenticate(self.user)
         self.mission = Mission.objects.create(name="Testmission")
         self.other_mission = Mission.objects.create(name="Andere Mission")

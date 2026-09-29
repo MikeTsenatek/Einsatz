@@ -68,23 +68,31 @@ class KeycloakOIDCAuthenticationBackend(OIDCAuthenticationBackend):
     def get_userinfo(self, access_token, id_token, payload):
         claims = super().get_userinfo(access_token, id_token, payload)
         group_claim_name = settings.KEYCLOAK_GROUPS_CLAIM
-        userinfo_groups = claims.get(group_claim_name)
-        id_token_groups = payload.get(group_claim_name)
+        userinfo_groups = claims.get(group_claim_name, [])
+        id_token_groups = payload.get(group_claim_name, [])
         required_group = settings.KEYCLOAK_REQUIRED_GROUP
         if (
             not _has_group(userinfo_groups, required_group)
             and not _has_group(id_token_groups, required_group)
         ):
             logger.warning(
-                'Keycloak-SSO Gruppen-Claim fehlt in beiden Quellen: '
+                'Keycloak-SSO erforderliche Gruppe fehlt in beiden Quellen: '
                 'scopes=%r, claim=%r, ID-Token-Gruppen=%r, UserInfo-Gruppen=%r.',
                 settings.OIDC_RP_SCOPES,
                 group_claim_name,
                 id_token_groups,
                 userinfo_groups,
             )
-        if not userinfo_groups and id_token_groups:
-            claims[group_claim_name] = id_token_groups
+        if isinstance(userinfo_groups, str):
+            userinfo_groups = [userinfo_groups]
+        if isinstance(id_token_groups, str):
+            id_token_groups = [id_token_groups]
+        if isinstance(userinfo_groups, (list, tuple, set)) and isinstance(
+            id_token_groups, (list, tuple, set)
+        ):
+            claims[group_claim_name] = list(dict.fromkeys(
+                [*userinfo_groups, *id_token_groups]
+            ))
         return claims
 
     def create_user(self, claims):

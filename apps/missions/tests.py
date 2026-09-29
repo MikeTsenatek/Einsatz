@@ -22,6 +22,7 @@ class MissionApiTests(APITestCase):
             username="dispatcher",
             password="secure-password",
         )
+        self.user.groups.clear()
         self.client.force_authenticate(self.user)
         self.mission = Mission.objects.create(name="Testmission")
 
@@ -34,7 +35,7 @@ class MissionApiTests(APITestCase):
         for cache_name in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
             self.user.__dict__.pop(cache_name, None)
 
-    def test_read_requires_authentication_but_no_model_permission(self):
+    def test_read_requires_authentication_and_view_permission(self):
         list_url = reverse("mission-list")
         detail_url = reverse("mission-detail", args=(self.mission.pk,))
 
@@ -42,6 +43,8 @@ class MissionApiTests(APITestCase):
         self.assertEqual(self.client.get(list_url).status_code, status.HTTP_403_FORBIDDEN)
 
         self.client.force_authenticate(self.user)
+        self.assertEqual(self.client.get(list_url).status_code, status.HTTP_403_FORBIDDEN)
+        self.grant("view_mission")
         self.assertEqual(self.client.get(list_url).status_code, status.HTTP_200_OK)
         self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_200_OK)
 
@@ -158,7 +161,9 @@ class OperationLogEntryApiTests(APITestCase):
             username="operation-log-user",
             password="secure-password",
         )
+        self.user.groups.clear()
         self.client.force_authenticate(self.user)
+        self.grant("view_operationlogentry")
         self.mission = Mission.objects.create(name="OperationLogEntry Mission")
         self.other_mission = Mission.objects.create(name="Andere Mission")
         self.priority = PriorityEnum.objects.create(level=3, name="Normal")

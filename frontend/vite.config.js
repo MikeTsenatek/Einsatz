@@ -1,1 +1,1 @@
-import {defineConfig} from 'vite';import vue from '@vitejs/plugin-vue';export default defineConfig({plugins:[vue()],server:{host:true,port:5173,allowedHosts:'all',proxy:{'/api':'http://app:8000'}}})
+import {defineConfig} from 'vite';import vue from '@vitejs/plugin-vue';export default defineConfig({plugins:[vue()],server:{host:true,port:5173,allowedHosts:'all',proxy:{'/api':'http://app:8000','/oidc':'http://app:8000'}}})

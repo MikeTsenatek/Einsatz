@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { api } from '../api'
+import { hasPermission } from '../permissions'
 
-const props = defineProps({ mission: { type: Object, required: true } })
+const props = defineProps({ mission: { type: Object, required: true }, user: Object })
 const emit = defineEmits(['navigate'])
 const now = ref(new Date())
 const loading = ref(false)
@@ -14,6 +15,10 @@ const updatedAt = ref(null)
 let controller
 
 const time = computed(() => now.value.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }))
+const canViewPatients = computed(() => hasPermission(props.user, 'patients.view_patient'))
+const canViewTeams = computed(() => hasPermission(props.user, 'teams.view_helpermission'))
+const canViewLog = computed(() => hasPermission(props.user, 'missions.view_operationlogentry'))
+const hasDashboardSections = computed(() => canViewPatients.value || canViewTeams.value || canViewLog.value)
 const activeHelpers = computed(() => helpers.value?.filter((item) => !item.end_date) ?? [])
 const activeTeams = computed(() => new Set(activeHelpers.value.map((item) => item.team?.id).filter((id) => id != null)).size)
 const recentEntries = computed(() => log.value?.results.slice(0, 5) ?? [])
@@ -29,10 +34,10 @@ async function load() {
   loading.value = true
   const missionId = props.mission.id
   const sources = [
-    { label: 'Patienten', target: patients, path: `/patients/?mission=${missionId}` },
-    { label: 'Helfer und Teams', target: helpers, path: `/missions/${missionId}/helpers/` },
-    { label: 'Einsatztagebuch', target: log, path: `/missions/${missionId}/operation-log/?visibility=active` },
-  ]
+    canViewPatients.value && { label: 'Patienten', target: patients, path: `/patients/?mission=${missionId}` },
+    canViewTeams.value && { label: 'Helfer und Teams', target: helpers, path: `/missions/${missionId}/helpers/` },
+    canViewLog.value && { label: 'Einsatztagebuch', target: log, path: `/missions/${missionId}/operation-log/?visibility=active` },
+  ].filter(Boolean)
   const results = await Promise.allSettled(sources.map((source) => api(source.path, { signal: request.signal })))
   if (request.signal.aborted) return
   errors.value = []
@@ -85,24 +90,25 @@ onBeforeUnmount(() => {
     <div v-if="errors.length" class="error" role="alert">
       <p v-for="error in errors" :key="error">{{ error }}</p>
     </div>
+    <p v-if="!hasDashboardSections" class="muted" role="status">Für die Einsatzübersicht fehlen Leserechte. Bitte Gruppenmitgliedschaft oder Rechte durch die Administration prüfen lassen.</p>
     <section class="stats" aria-label="Kennzahlen" :aria-busy="loading">
-      <article>
+      <article v-if="canViewPatients">
         <span>Patienten</span><b>{{ patients === null ? '–' : patients.length }}</b>
         <small>{{ patients === null ? 'Keine Daten verfügbar' : 'Im Einsatz erfasst' }}</small>
         <button class="dashboard-link" @click="emit('navigate', 'patients')">Patienten öffnen →</button>
       </article>
-      <article>
+      <article v-if="canViewTeams">
         <span>Aktive Teams</span><b>{{ helpers === null ? '–' : activeTeams }}</b>
         <small>{{ helpers === null ? 'Keine Daten verfügbar' : `${activeHelpers.length} Helfer im Dienst · Teams mit Helfern im Dienst` }}</small>
         <button class="dashboard-link" @click="emit('navigate', 'teams')">Helfer öffnen →</button>
       </article>
-      <article>
+      <article v-if="canViewLog">
         <span>Tagebucheinträge</span><b>{{ log === null ? '–' : log.count }}</b>
         <small>{{ log === null ? 'Keine Daten verfügbar' : 'Nicht gestrichene Einträge' }}</small>
         <button class="dashboard-link" @click="emit('navigate', 'operationLog')">Einsatztagebuch öffnen →</button>
       </article>
     </section>
-    <section class="activity" :aria-busy="loading">
+    <section v-if="canViewLog" class="activity" :aria-busy="loading">
       <div class="activity-heading">
         <h2>Letzte Tagebucheinträge</h2>
         <button class="dashboard-link" @click="emit('navigate', 'operationLog')">Alle anzeigen →</button>

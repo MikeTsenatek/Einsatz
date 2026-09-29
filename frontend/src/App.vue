@@ -43,13 +43,14 @@ watch(app.selected, () => {
       :missions="app.active.value"
       :busy="app.busy.value"
       :error="app.error.value"
+      :user="app.user.value"
       @create="app.createMission"
       @open="app.openMission"
     />
     <OperationLogView v-else-if="activeView === 'operationLog'" :mission="app.selected.value" :user="app.user.value" />
-    <PatientsView v-else-if="activeView === 'patients'" :mission="app.selected.value" />
+    <PatientsView v-else-if="activeView === 'patients'" :mission="app.selected.value" :user="app.user.value" />
     <MapView v-else-if="activeView === 'map'" :key="app.selected.value.id" :mission="app.selected.value" :user="app.user.value" />
-    <TeamsView v-else-if="activeView === 'teams'" :mission="app.selected.value" />
-    <DashboardView v-else :mission="app.selected.value" @navigate="activeView = $event" />
+    <TeamsView v-else-if="activeView === 'teams'" :mission="app.selected.value" :user="app.user.value" />
+    <DashboardView v-else :mission="app.selected.value" :user="app.user.value" @navigate="activeView = $event" />
   </BaseLayout>
 </template>

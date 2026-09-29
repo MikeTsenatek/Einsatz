@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.missions.models import Mission
@@ -7,13 +8,42 @@ from .models import MapOverlay
 from .serializers import MapOverlaySerializer, GeoJSONImportSerializer
 
 
-class MapAdminPermission(BasePermission):
+class MapModelPermissions(BasePermission):
+    message = "Bitte melden Sie sich an oder lassen Sie Ihre Kartenrechte prüfen."
+
     def has_permission(self, request, view):
-        return request.method in SAFE_METHODS or request.user.is_staff
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        if isinstance(view, MissionMapView):
+            if request.method in SAFE_METHODS:
+                required = "map.view_mapoverlay"
+            elif request.method == "PUT":
+                action = (
+                    "change_mapoverlay"
+                    if MapOverlay.objects.filter(
+                        mission_id=view.kwargs["mission_pk"],
+                    ).exists()
+                    else "add_mapoverlay"
+                )
+                required = f"map.{action}"
+            else:
+                required = "map.change_mapoverlay"
+        else:
+            action = "view_geojsonimport" if request.method in SAFE_METHODS else "add_geojsonimport"
+            required = f"map.{action}"
+
+        if not request.user.has_perm(required):
+            raise PermissionDenied(
+                "Für diese Kartenaktion fehlt das Recht "
+                f"{required}. Bitte Gruppenmitgliedschaft oder Rechte durch die "
+                "Administration prüfen lassen."
+            )
+        return True
 
 
 class MissionMapView(APIView):
-    permission_classes = (IsAuthenticated, MapAdminPermission)
+    permission_classes = (MapModelPermissions,)
 
     def get(self, request, mission_pk):
         mission = get_object_or_404(Mission, pk=mission_pk)
@@ -37,7 +67,7 @@ class MissionMapView(APIView):
 
 
 class MissionGeoJSONView(APIView):
-    permission_classes = (IsAuthenticated, MapAdminPermission)
+    permission_classes = (MapModelPermissions,)
 
     def get(self, request, mission_pk):
         mission = get_object_or_404(Mission, pk=mission_pk)

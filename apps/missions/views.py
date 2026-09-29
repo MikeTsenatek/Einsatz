@@ -5,11 +5,11 @@ from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.mgmt.models import PriorityEnum
 from config.pagination import StandardResultsSetPagination
+from config.permissions import StrictDjangoModelPermissions
 
 from .models import Mission, OperationLogEntry
 from .serializers import MissionSerializer, OperationLogEntrySerializer, PrioritySerializer
@@ -18,7 +18,7 @@ from .serializers import MissionSerializer, OperationLogEntrySerializer, Priorit
 class MissionViewSet(viewsets.ModelViewSet):
     queryset = Mission.objects.all().order_by("name")
     serializer_class = MissionSerializer
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (StrictDjangoModelPermissions,)
 
     def perform_destroy(self, instance):
         try:
@@ -38,7 +38,7 @@ class OperationLogEntryViewSet(
 ):
     serializer_class = OperationLogEntrySerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = (DjangoModelPermissions,)
+    permission_classes = (StrictDjangoModelPermissions,)
     http_method_names = ("get", "post", "patch", "head", "options")
     editable_fields = {"sender", "recipient", "timestamp", "text", "measure", "priority"}
 
@@ -119,4 +119,4 @@ class OperationLogEntryViewSet(
 class PriorityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PriorityEnum.objects.all()
     serializer_class = PrioritySerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (StrictDjangoModelPermissions,)

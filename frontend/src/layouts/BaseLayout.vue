@@ -1,7 +1,9 @@
 <script setup>
+import { computed } from 'vue'
 import BrandLogo from '../components/BrandLogo.vue'
+import { hasPermission } from '../permissions'
 
-defineProps({
+const props = defineProps({
   variant: { type: String, default: 'app' },
   user: Object,
   mission: Object,
@@ -10,11 +12,14 @@ defineProps({
 const emit = defineEmits(['navigate', 'change-mission', 'logout'])
 const navigation = [
   { id: 'overview', icon: '▦', label: 'Übersicht' },
-  { id: 'patients', icon: '♙', label: 'Patienten' },
-  { id: 'operationLog', icon: '☷', label: 'Einsatztagebuch' },
-  { id: 'teams', icon: '♧', label: 'Helfer' },
-  { id: 'map', icon: '⌖', label: 'Karte' },
+  { id: 'patients', icon: '♙', label: 'Patienten', permissions: ['patients.view_treatment', 'patients.view_patient'] },
+  { id: 'operationLog', icon: '☷', label: 'Einsatztagebuch', permission: 'missions.view_operationlogentry' },
+  { id: 'teams', icon: '♧', label: 'Helfer', permissions: ['teams.view_helpermission', 'teams.view_team'] },
+  { id: 'map', icon: '⌖', label: 'Karte', permissions: ['map.view_mapoverlay', 'map.view_geojsonimport'] },
 ]
+const visibleNavigation = computed(() => navigation.filter((item) => (
+  !item.permissions || item.permissions.some((permission) => hasPermission(props.user, permission))
+)))
 </script>
 
 <template>
@@ -43,7 +48,7 @@ const navigation = [
       <BrandLogo />
       <nav aria-label="Hauptnavigation">
         <button
-          v-for="item in navigation"
+          v-for="item in visibleNavigation"
           :key="item.id"
           :class="{ on: activeView === item.id }"
           :aria-label="item.label"

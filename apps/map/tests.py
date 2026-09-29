@@ -10,6 +10,8 @@ class MissionMapTests(APITestCase):
     def setUp(self):
         self.admin = get_user_model().objects.create_user(username='map-admin', is_staff=True)
         self.viewer = get_user_model().objects.create_user(username='map-viewer')
+        self.outsider = get_user_model().objects.create_user(username='map-outsider')
+        self.outsider.groups.clear()
         self.mission = Mission.objects.create(name='Einsatz A')
         self.other = Mission.objects.create(name='Einsatz B')
         self.url = f'/api/missions/{self.mission.pk}/map/'
@@ -37,9 +39,12 @@ class MissionMapTests(APITestCase):
     def test_access_control(self):
         self.assertEqual(self.client.get(self.url).status_code, 403)
         self.assertEqual(self.client.put(self.url, self.data, format='json').status_code, 403)
-        self.client.force_authenticate(self.viewer)
+        self.client.force_authenticate(self.outsider)
         self.assertEqual(self.client.put(self.url, self.data, format='json').status_code, 403)
         self.assertFalse(MapOverlay.objects.exists())
+        self.assertFalse(self.viewer.is_staff)
+        self.client.force_authenticate(self.viewer)
+        self.assertEqual(self.client.put(self.url, self.data, format='json').status_code, 200)
 
     def test_invalid_corners_do_not_overwrite_saved_map(self):
         self.client.force_authenticate(self.admin)
@@ -119,6 +124,8 @@ class GeoJSONImportTests(APITestCase):
     def setUp(self):
         self.admin = get_user_model().objects.create_user(username='geo-admin', is_staff=True)
         self.viewer = get_user_model().objects.create_user(username='geo-viewer')
+        self.outsider = get_user_model().objects.create_user(username='geo-outsider')
+        self.outsider.groups.clear()
         self.mission = Mission.objects.create(name='Geo A')
         self.other = Mission.objects.create(name='Geo B')
         self.url = f'/api/missions/{self.mission.pk}/map/geojson/'
@@ -142,8 +149,10 @@ class GeoJSONImportTests(APITestCase):
 
     def test_permissions_and_import_only(self):
         self.assertEqual(self.client.get(self.url).status_code, 403)
-        self.client.force_authenticate(self.viewer)
+        self.client.force_authenticate(self.outsider)
         self.assertEqual(self.client.post(self.url, self.data, format='json').status_code, 403)
+        self.client.force_authenticate(self.viewer)
+        self.assertEqual(self.client.post(self.url, self.data, format='json').status_code, 201)
         self.client.force_authenticate(self.admin)
         self.assertEqual(self.client.put(self.url, self.data, format='json').status_code, 405)
         self.assertEqual(self.client.patch(self.url, self.data, format='json').status_code, 405)
@@ -226,8 +235,18 @@ class GeoJSONAdminTests(APITestCase):
         viewer = get_user_model().objects.create_user(username='geo-readonly', is_staff=True)
         viewer.user_permissions.add(Permission.objects.get(content_type__app_label='map', codename='view_geojsonimport'))
         self.client.force_login(viewer)
-        self.assertEqual(self.client.get(self.url).status_code, 200)
-        self.assertEqual(self.client.post(self.url, self.form).status_code, 403)
+        viewer.refresh_from_db()
+        viewer.groups.clear()
+        self.assertFalse(viewer.has_perm('map.change_geojsonimport'))
+        read_response = self.client.get(self.url)
+        self.assertEqual(read_response.status_code, 200)
+        self.assertEqual(read_response.wsgi_request.user.pk, viewer.pk)
+        response = self.client.post(self.url, self.form)
+        self.assertEqual(response.wsgi_request.user.pk, viewer.pk)
+        self.assertFalse(response.wsgi_request.user.has_perm('map.change_geojsonimport'))
+        self.assertEqual(response.status_code, 403, response.get('Location'))
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.data, self.data)
 
     def test_polygon_coordinates_are_editable_without_geometry_summary(self):
         self.record.data = {'type': 'Feature', 'geometry': {

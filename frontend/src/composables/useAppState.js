@@ -1,5 +1,5 @@
 import { computed, onMounted, ref } from 'vue'
-import { api } from '../api'
+import { api, logout } from '../api'
 
 export function useAppState() {
   const stage = ref('loading')
@@ -89,14 +89,6 @@ export function useAppState() {
     selected.value = null
     error.value = ''
     stage.value = 'missions'
-  }
-
-  async function logout() {
-    await api('/auth/logout/', { method: 'POST' })
-    user.value = null
-    missions.value = []
-    selected.value = null
-    stage.value = 'login'
   }
 
   onMounted(restoreSession)

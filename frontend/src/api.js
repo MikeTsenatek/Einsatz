@@ -49,3 +49,17 @@ export async function api(path, options = {}) {
   if (!response.ok) throw new ApiError(errorMessage(data, response.status), response.status, data)
   return data
 }
+
+export function logout() {
+  // A browser navigation lets OIDCLogoutView redirect to the provider with its cookies.
+  const form = document.createElement('form')
+  form.method = 'POST'
+  form.action = '/api/auth/logout/'
+  const token = document.createElement('input')
+  token.type = 'hidden'
+  token.name = 'csrfmiddlewaretoken'
+  token.value = decodeURIComponent(csrf() || '')
+  form.appendChild(token)
+  document.body.appendChild(form)
+  form.submit()
+}

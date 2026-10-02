@@ -1,9 +1,11 @@
-from django.contrib.auth import authenticate, login, logout
+from urllib.parse import urlencode
+
+from django.contrib.auth import authenticate, login
 from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 
@@ -41,8 +43,14 @@ def login_view(request):
     return Response({"authenticated": True, "user": _user_payload(user)})
 
 
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def logout_view(request):
-    logout(request)
-    return Response(status=status.HTTP_204_NO_CONTENT)
+def provider_logout(request):
+    """Build the RP-initiated logout URL before OIDCLogoutView clears the session."""
+    params = {
+        'client_id': settings.OIDC_RP_CLIENT_ID,
+        'post_logout_redirect_uri': request.build_absolute_uri(settings.LOGOUT_REDIRECT_URL),
+    }
+    id_token = request.session.get('oidc_id_token')
+    if id_token:
+        params['id_token_hint'] = id_token
+    # Older sessions without an ID token require confirmation at Keycloak.
+    return f'{settings.OIDC_OP_LOGOUT_ENDPOINT}?{urlencode(params)}'

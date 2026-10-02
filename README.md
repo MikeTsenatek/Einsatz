@@ -72,6 +72,15 @@ muss existieren und dem Client zugewiesen sein; bei abweichendem Scope-Namen
 den Gruppen-Claim in die
 UserInfo-Antwort oder den ID-Token aufnehmen. Als
 Redirect-URI des Clients `https://<domain>/oidc/callback/` eintragen.
+Als **Valid post logout redirect URIs** zusätzlich `https://<domain>/` eintragen
+(inklusive abschließendem Slash; lokal die tatsächliche Origin mit Port verwenden).
+Der Abmelde-Button sendet immer einen CSRF-geschützten Formular-POST an
+`/api/auth/logout/`. Ohne SSO beendet die OIDC-View die lokale Sitzung und leitet
+zur Startseite weiter. Mit SSO erzeugt sie die Keycloak-Logout-URL mit `id_token_hint`,
+beendet die Django-Sitzung und leitet den Browser zu Keycloak und anschließend
+zur Startseite zurück. ID-Tokens werden dafür serverseitig in der Sitzung gespeichert.
+Bei bestehenden Sitzungen ohne gespeicherten ID-Token kann Keycloak eine
+Abmeldebestätigung anzeigen; nach erneuter Anmeldung steht der Token zur Verfügung.
 
 Beim erfolgreichen ersten SSO-Login wird ein Konto automatisch angelegt, wenn
 der konfigurierte Gruppen-Claim die erforderliche Gruppe enthält. Das Konto

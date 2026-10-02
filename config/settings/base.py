@@ -82,6 +82,7 @@ if any(_keycloak_configured) and not all(_keycloak_configured):
 
 KEYCLOAK_SSO_ENABLED = all(_keycloak_configured)
 OIDC_CREATE_USER = False
+LOGOUT_REDIRECT_URL = '/'
 if KEYCLOAK_SSO_ENABLED:
     AUTHENTICATION_BACKENDS = [
         'apps.users.auth.KeycloakOIDCAuthenticationBackend',
@@ -97,6 +98,7 @@ if KEYCLOAK_SSO_ENABLED:
         _oidc_scopes.append(KEYCLOAK_GROUPS_SCOPE)
     OIDC_RP_SCOPES = ' '.join(_oidc_scopes)
     OIDC_USE_PKCE = True
+    OIDC_STORE_ID_TOKEN = True
     OIDC_CREATE_USER = True
     OIDC_CALLBACK_CLASS = 'apps.users.auth.KeycloakOIDCCallbackView'
     OIDC_AUTHENTICATE_CLASS = 'apps.users.auth.KeycloakOIDCRequestView'
@@ -106,7 +108,8 @@ if KEYCLOAK_SSO_ENABLED:
     OIDC_OP_JWKS_ENDPOINT = f'{_keycloak_issuer}/protocol/openid-connect/certs'
     LOGIN_REDIRECT_URL = '/'
     LOGIN_REDIRECT_URL_FAILURE = '/?sso=denied'
-    LOGOUT_REDIRECT_URL = '/'
+    OIDC_OP_LOGOUT_ENDPOINT = f"{_keycloak_issuer}/protocol/openid-connect/logout"
+    OIDC_OP_LOGOUT_URL_METHOD = 'apps.users.views.provider_logout'
 
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',

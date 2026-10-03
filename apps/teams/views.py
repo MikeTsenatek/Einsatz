@@ -90,6 +90,10 @@ class MissionHelperMissionViewSet(ModelViewSet):
 
     def save(self, serializer):
         mission = self.get_mission()
+        birthday_changed = "helper_birthday" in serializer.validated_data
+        birthday = serializer.validated_data.pop("helper_birthday", None)
+        if birthday_changed and not self.request.user.has_perm("teams.change_helper"):
+            raise PermissionDenied("Zum Ändern des Geburtsdatums fehlt die Berechtigung teams.change_helper.")
         with transaction.atomic():
             team = serializer.validated_data.get("team", getattr(serializer.instance, "team", None))
             if team is not None:
@@ -115,6 +119,9 @@ class MissionHelperMissionViewSet(ModelViewSet):
                     raise ValidationError({"team_id": "Der Helfer ist in diesem Zeitraum bereits einem anderen Team zugeordnet."})
             if end_date is None:
                 self.validate_helper(helper, mission, serializer.instance)
+            if birthday_changed:
+                helper.birthday = birthday
+                helper.save(update_fields=("birthday",))
             serializer.save(mission=mission, helper=helper)
 
     def perform_create(self, serializer):

@@ -6,6 +6,7 @@ import { hasPermission } from '../permissions'
 const props = defineProps({ mission: { type: Object, required: true }, user: Object })
 const canAddDuty = computed(() => hasPermission(props.user, 'teams.add_helpermission'))
 const canAddHelper = computed(() => hasPermission(props.user, 'teams.add_helper'))
+const canChangeHelper = computed(() => hasPermission(props.user, 'teams.change_helper'))
 const canChangeDuty = computed(() => hasPermission(props.user, 'teams.change_helpermission'))
 const canDeleteDuty = computed(() => hasPermission(props.user, 'teams.delete_helpermission'))
 const canAddTeam = computed(() => hasPermission(props.user, 'teams.add_team'))
@@ -158,6 +159,9 @@ async function save() {
   if (!editing.value) {
     if (selectedHelper.value) payload.helper_id = selectedHelper.value.id
     else payload.helper_details = { name: form.value.name.trim(), birthday: form.value.birthday || null }
+  }
+  if (editing.value && canChangeHelper.value && form.value.birthday !== (editing.value.helper.birthday || '')) {
+    payload.helper_birthday = form.value.birthday || null
   }
   try {
     const base = '/missions/' + props.mission.id + '/helpers/'
@@ -373,7 +377,7 @@ onMounted(load)
             </li>
           </ul>
         </div>
-        <label>Geburtsdatum <small>optional</small><input v-model="form.birthday" type="date" :disabled="Boolean(editing)"></label>
+        <label>Geburtsdatum <small>optional</small><input v-model="form.birthday" type="date" :disabled="Boolean(editing) && !canChangeHelper"></label>
         <label>Team <small>optional</small><select v-model="form.team_id"><option value="">Kein Team</option><option v-for="team in selectableTeams" :key="team.id" :value="team.id">{{ team.name }}</option></select></label>
         <label>Dienstbeginn<input v-model="form.start_date" required type="datetime-local"></label>
         <label>Geplantes Dienstende <small>optional</small><input v-model="form.planned_end_date" type="datetime-local" :min="form.start_date"></label>

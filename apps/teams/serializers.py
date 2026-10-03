@@ -36,6 +36,7 @@ class TeamSerializer(serializers.ModelSerializer):
 
 
 class HelperMissionSerializer(serializers.ModelSerializer):
+    helper_birthday = serializers.DateField(required=False, allow_null=True, write_only=True)
     helper = HelperSerializer(read_only=True)
     helper_id = serializers.PrimaryKeyRelatedField(
         source="helper", queryset=Helper.objects.all(), required=False, write_only=True,
@@ -50,12 +51,14 @@ class HelperMissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = HelperMission
         fields = (
-            "id", "mission", "helper", "helper_id", "helper_details",
+            "id", "mission", "helper", "helper_id", "helper_details", "helper_birthday",
             "team", "team_id", "start_date", "planned_end_date", "end_date",
         )
         read_only_fields = ("id", "mission")
 
     def validate(self, attrs):
+        if "helper_birthday" in attrs and self.instance is None:
+            raise serializers.ValidationError({"helper_birthday": "Nur für bestehende Helfer verfügbar."})
         helper = attrs.get("helper", getattr(self.instance, "helper", None))
         if self.instance is None and helper is None and not attrs.get("helper_details"):
             raise serializers.ValidationError({"helper_details": "Helferdaten sind erforderlich."})

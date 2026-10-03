@@ -46,6 +46,37 @@ class HelperMissionApiTests(APITestCase):
         self.assertEqual(response.data["helper"]["name"], "Erika Muster")
         self.assertIsNone(response.data["end_date"])
 
+    def test_edit_helper_birthday(self):
+        helper = Helper.objects.create(name="Max Muster", birthday="1990-05-10")
+        assignment = HelperMission.objects.create(
+            helper=helper, mission=self.mission,
+            start_date=datetime(2026, 8, 25, 8, tzinfo=timezone.utc),
+        )
+        url = reverse("mission-helper-detail", args=(self.mission.pk, assignment.pk))
+        self.grant("change_helpermission")
+        response = self.client.patch(url, {"helper_birthday": "1991-06-11"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        helper.refresh_from_db()
+        self.assertEqual(helper.birthday.isoformat(), "1990-05-10")
+
+        self.grant("change_helper")
+        response = self.client.patch(url, {"helper_birthday": "1991-06-11"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["helper"]["birthday"], "1991-06-11")
+        helper.refresh_from_db()
+        self.assertEqual(helper.birthday.isoformat(), "1991-06-11")
+        self.assertEqual(Helper.objects.count(), 1)
+
+        response = self.client.patch(url, {"helper_birthday": "1991-02-30"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        helper.refresh_from_db()
+        self.assertEqual(helper.birthday.isoformat(), "1991-06-11")
+
+        response = self.client.patch(url, {"helper_birthday": None}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        helper.refresh_from_db()
+        self.assertIsNone(helper.birthday)
+
     def test_list_is_limited_to_mission(self):
         helper = Helper.objects.create(name="Max Muster")
         HelperMission.objects.create(

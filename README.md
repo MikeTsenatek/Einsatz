@@ -193,3 +193,17 @@ Die Kartenansicht übernimmt die Änderungen beim nächsten Laden.
 Erforderlich sind Staffstatus und die Django-Berechtigung
 `map.change_geojsonimport` (Superuser besitzen diese bereits). Neue Daten werden
 weiterhin über den GeoJSON-Import auf der Karte angelegt.
+
+
+## Installation als PWA
+
+Der Frontend-Produktionsbuild enthält das Web-App-Manifest, App-Icons und einen
+Service Worker. Die Anwendung muss über HTTPS (oder lokal über localhost)
+erreichbar sein. In Chrome/Edge lässt sie sich über das Installationssymbol bzw.
+das Browsermenü installieren. Auf iPhone/iPad in Safari „Teilen“ → „Zum
+Home-Bildschirm“ wählen. Die installierte App startet in einem eigenen Fenster.
+
+Ohne Verbindung erscheint beim erneuten Öffnen eine Offline-Hinweisseite.
+Einsatz-, Patienten- und API-Daten werden vom Service Worker nicht gespeichert;
+für die Arbeit mit aktuellen Daten ist eine Verbindung erforderlich. Im
+Vite-Entwicklungsmodus wird kein Service Worker registriert.

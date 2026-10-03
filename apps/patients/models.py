@@ -69,6 +69,9 @@ class Treatment(MissionNumberedModel):
     )
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True)
+    transported_by_public_ems = models.BooleanField(
+        "Abtransport durch öffentlich-rechtlichen Rettungsdienst", default=False,
+    )
     discharge_destination = models.CharField("Entlassziel", max_length=200, blank=True, default="")
     keyword = models.CharField(max_length=200, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
@@ -117,6 +120,7 @@ class Treatment(MissionNumberedModel):
             raise ValidationError({
                 "discharge_destination": "Zum Abschließen einer Behandlung ist ein Entlassziel erforderlich."
             })
+
 
     def __str__(self):
         patient = self.patient or "Nicht zugeordnet"

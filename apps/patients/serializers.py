@@ -92,7 +92,7 @@ class TreatmentSerializer(serializers.ModelSerializer):
         model = Treatment
         fields = (
             "id", "number", "mission", "patient", "patient_details", "create_new_patient", "start_date", "end_date",
-            "keyword", "discharge_destination", "notes", "treater_text", "treater_id", "doctor_text",
+            "keyword", "discharge_destination", "transported_by_public_ems", "notes", "treater_text", "treater_id", "doctor_text",
             "doctor_id", "assigning_enum", "leaving_enum", "leaving_specified",
             "external_order_number",
         )

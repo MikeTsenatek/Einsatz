@@ -341,7 +341,7 @@ class UnassignedTreatmentWorkflowTests(PermissionTestCase):
             {
                 "patient": self.patient.pk,
                 "keyword": "Versorgung",
-                "discharge_destination": "Nach Hause",
+                "discharge_destination": "Nach Hause", "transported_by_public_ems": False,
                 "end_date": "2026-08-22T11:00:00Z",
             },
             format="json",
@@ -420,7 +420,7 @@ class DischargeDestinationTreatmentTests(PermissionTestCase):
             with self.subTest(destination=destination):
                 response = self.client.patch(self.url, {
                     "end_date": "2026-08-22T11:00:00Z",
-                    "discharge_destination": destination,
+                    "discharge_destination": destination, "transported_by_public_ems": False,
                 }, format="json")
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
                 self.assertEqual(response.data["discharge_destination"], destination)
@@ -428,7 +428,7 @@ class DischargeDestinationTreatmentTests(PermissionTestCase):
                 self.assertEqual(self.treatment.discharge_destination, destination)
 
     def test_saved_destination_is_used_for_completion_and_cannot_be_cleared_afterwards(self):
-        saved = self.client.patch(self.url, {"discharge_destination": "Nach Hause"}, format="json")
+        saved = self.client.patch(self.url, {"discharge_destination": "Nach Hause", "transported_by_public_ems": False}, format="json")
         self.assertEqual(saved.status_code, status.HTTP_200_OK)
         completed = self.client.patch(self.url, {"end_date": "2026-08-22T11:00:00Z"}, format="json")
         self.assertEqual(completed.status_code, status.HTTP_200_OK)
@@ -450,6 +450,7 @@ class DischargeDestinationTreatmentTests(PermissionTestCase):
                 self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
                 self.assertIn("discharge_destination", response.data)
                 payload["discharge_destination"] = "Krankenhaus"
+                payload["transported_by_public_ems"] = False
                 response = self.client.post(reverse(route, args=(key,)), payload, format="json")
                 self.assertEqual(response.status_code, status.HTTP_201_CREATED)
                 self.assertEqual(response.data["discharge_destination"], "Krankenhaus")
@@ -462,4 +463,35 @@ class DischargeDestinationTreatmentTests(PermissionTestCase):
             self.treatment.clean()
         self.assertIn("discharge_destination", error.exception.message_dict)
         self.treatment.discharge_destination = "Nach Hause"
+        self.treatment.transported_by_public_ems = False
         self.treatment.clean()
+
+
+class PublicEmsTransportTests(PermissionTestCase):
+    def setUp(self):
+        super().setUp()
+        self.grant("change_treatment")
+        self.treatment = Treatment.objects.create(mission=self.mission, patient=self.patient, start_date="2026-08-22T10:00:00Z", keyword="Versorgung")
+        self.url = reverse("mission-treatment-detail", args=(self.mission.pk, self.treatment.pk))
+        self.payload = {"end_date": "2026-08-22T11:00:00Z", "discharge_destination": "Krankenhaus"}
+
+    def test_transport_defaults_to_no_and_completion_needs_no_explicit_answer(self):
+        self.assertIs(self.treatment.transported_by_public_ems, False)
+        response = self.client.patch(self.url, self.payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIs(response.data["transported_by_public_ems"], False)
+        self.treatment.refresh_from_db()
+        self.assertIsNotNone(self.treatment.end_date)
+        self.assertIs(self.treatment.transported_by_public_ems, False)
+
+    def test_yes_and_no_are_saved_and_can_be_corrected(self):
+        for answer in (True, False):
+            response = self.client.patch(self.url, {**self.payload, "transported_by_public_ems": answer}, format="json")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIs(response.data["transported_by_public_ems"], answer)
+            self.treatment.refresh_from_db()
+            self.assertIs(self.treatment.transported_by_public_ems, answer)
+        response = self.client.patch(self.url, {"notes": "Nachtrag"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.patch(self.url, {"transported_by_public_ems": None}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

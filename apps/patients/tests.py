@@ -1,10 +1,11 @@
-from datetime import date
+from datetime import date, datetime
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.test import SimpleTestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -12,6 +13,7 @@ from apps.missions.models import Mission
 
 from .admin import PatientAdmin, TreatmentInline
 from .models import Patient, Treatment, calculate_age
+from .serializers import TreatmentSerializer
 
 
 class PatientAdminTests(SimpleTestCase):
@@ -50,6 +52,24 @@ class PatientAgeTests(SimpleTestCase):
     def test_age_is_calculated_around_birthday(self):
         self.assertEqual(calculate_age(date(2000, 8, 22), date(2026, 8, 22)), 26)
         self.assertEqual(calculate_age(date(2000, 8, 23), date(2026, 8, 22)), 25)
+
+    def test_treatment_age_uses_local_treatment_day(self):
+        patient = Patient(birthday=date(2000, 5, 12), name="Anna", number=1)
+        for start, expected in (
+            (datetime(2020, 5, 11, 12), 19),
+            (datetime(2020, 5, 12, 0), 20),
+        ):
+            with self.subTest(start=start):
+                treatment = Treatment(
+                    patient=patient, start_date=timezone.make_aware(start), number=1,
+                )
+                data = TreatmentSerializer(treatment).data
+                self.assertEqual(data["patient"]["age"], expected)
+
+    def test_treatment_preserves_manually_entered_age(self):
+        patient = Patient(age=0, name="Baby", number=1)
+        treatment = Treatment(patient=patient, start_date=timezone.now(), number=1)
+        self.assertEqual(TreatmentSerializer(treatment).data["patient"]["age"], 0)
 
 
 class PatientApiTests(PermissionTestCase):

@@ -98,6 +98,14 @@ class TreatmentSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "number", "mission")
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.patient and instance.patient.birthday:
+            data["patient"]["age"] = calculate_age(
+                instance.patient.birthday, timezone.localdate(instance.start_date),
+            )
+        return data
+
     def validate(self, attrs):
         patient = attrs.get("patient", getattr(self.instance, "patient", None))
         start_date = attrs.get("start_date", getattr(self.instance, "start_date", None))

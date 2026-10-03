@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
@@ -12,6 +13,7 @@ from config.pagination import StandardResultsSetPagination
 from config.permissions import StrictDjangoModelPermissions
 
 from .models import Mission, OperationLogEntry
+from .statistics import daily_statistics
 from .serializers import MissionSerializer, OperationLogEntrySerializer, PrioritySerializer
 
 
@@ -19,6 +21,10 @@ class MissionViewSet(viewsets.ModelViewSet):
     queryset = Mission.objects.all().order_by("name")
     serializer_class = MissionSerializer
     permission_classes = (StrictDjangoModelPermissions,)
+
+    @action(detail=True, methods=["get"])
+    def statistics(self, request, pk=None):
+        return Response(daily_statistics(self.get_object(), request.user))
 
     def perform_destroy(self, instance):
         try:

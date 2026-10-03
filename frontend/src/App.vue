@@ -10,6 +10,7 @@ import OperationLogView from './views/OperationLogView.vue'
 import PatientsView from './views/PatientsView.vue'
 import MapView from './views/MapView.vue'
 import TeamsView from './views/TeamsView.vue'
+import StatisticsView from './views/StatisticsView.vue'
 
 const app = useAppState()
 const activeView = ref('overview')
@@ -51,6 +52,7 @@ watch(app.selected, () => {
     <PatientsView v-else-if="activeView === 'patients'" :mission="app.selected.value" :user="app.user.value" />
     <MapView v-else-if="activeView === 'map'" :key="app.selected.value.id" :mission="app.selected.value" :user="app.user.value" />
     <TeamsView v-else-if="activeView === 'teams'" :mission="app.selected.value" :user="app.user.value" />
+    <StatisticsView v-else-if="activeView === 'statistics'" :mission="app.selected.value" />
     <DashboardView v-else :mission="app.selected.value" :user="app.user.value" @navigate="activeView = $event" />
   </BaseLayout>
 </template>

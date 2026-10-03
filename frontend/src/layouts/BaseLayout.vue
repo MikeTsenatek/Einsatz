@@ -15,6 +15,7 @@ const navigation = [
   { id: 'patients', icon: '♙', label: 'Patienten', permissions: ['patients.view_treatment', 'patients.view_patient'] },
   { id: 'operationLog', icon: '☷', label: 'Einsatztagebuch', permission: 'missions.view_operationlogentry' },
   { id: 'teams', icon: '♧', label: 'Helfer', permissions: ['teams.view_helpermission', 'teams.view_team'] },
+  { id: 'statistics', icon: '▥', label: 'Statistik', permissions: ['missions.view_mission'] },
   { id: 'map', icon: '⌖', label: 'Karte', permissions: ['map.view_mapoverlay', 'map.view_geojsonimport'] },
 ]
 const visibleNavigation = computed(() => navigation.filter((item) => (

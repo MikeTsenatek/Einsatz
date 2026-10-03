@@ -16,6 +16,7 @@ const navigation = [
   { id: 'operationLog', icon: '☷', label: 'Einsatztagebuch', permission: 'missions.view_operationlogentry' },
   { id: 'teams', icon: '♧', label: 'Helfer', permissions: ['teams.view_helpermission', 'teams.view_team'] },
   { id: 'statistics', icon: '▥', label: 'Statistik', permissions: ['missions.view_mission'] },
+  { id: 'shiftExport', icon: '⇩', label: 'Schichtexport', permissions: ['missions.view_mission'] },
   { id: 'map', icon: '⌖', label: 'Karte', permissions: ['map.view_mapoverlay', 'map.view_geojsonimport'] },
 ]
 const visibleNavigation = computed(() => navigation.filter((item) => (

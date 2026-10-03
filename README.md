@@ -227,3 +227,33 @@ Freitext ist nicht zulässig. Die optionale Verknüpfung wird am Helfer gespeich
 und bei der Wiederverwendung übernommen. Für die Liste ist `mgmt.view_hiorg`,
 für Änderungen bestehender Helfer `teams.change_helper` erforderlich.
 Die Django-Administration bietet ebenfalls eine Autocomplete-Auswahl.
+
+
+## PDF-Schichtexport
+
+Unter **Schichtexport** lässt sich ein PDF für den kompletten Einsatz oder einen
+Zeitraum mit Datum und Uhrzeit erzeugen. Daten werden vollständig über die
+vorhandenen APIs geladen; PDF-Erstellung und Download erfolgen im Frontend.
+Alle Zeiten verwenden Europe/Berlin. Der Beginn ist einschließlich, das Ende
+ausschließlich. Nicht eindeutige Uhrzeiten bei der Zeitumstellung werden abgewiesen.
+
+Das PDF enthält Übersicht mit Einsatz- und Abschlusszahlen sowie Helferstunden,
+Patienten pro Behandlung mit Name, Geburtstag, Entlassungsort und Stichwort,
+das ETB einschließlich gekennzeichneter gestrichener Einträge sowie Helferdienste
+sortiert nach Gliederung. Laufende Behandlungen und Dienste werden bei einer
+Überschneidung mit dem Zeitraum aufgenommen. Helferstunden werden auf den
+Zeitraum und den Erstellungszeitpunkt begrenzt; überlappende Dienste desselben
+Helfers zählen in der Gesamtsumme nur einmal. Ein archiviertes Team begrenzt die
+Dienstzeit seiner Helfer. Einträge ohne HiOrg erscheinen am Ende der Helferliste.
+
+Der vollständige Export benötigt Leserechte für Einsatz, Behandlungen, Patienten,
+ETB, Helferdienste und Teams. Fehlende Rechte und Ladefehler verhindern einen
+unvollständigen PDF-Download. Die eingebettete DejaVu-Schrift wird lokal ausgeliefert;
+die Lizenz liegt in `frontend/public/fonts/DejaVu-LICENSE.txt`.
+
+Frontendtests nach Installation der npm-Abhängigkeiten:
+
+```sh
+cd frontend
+node --test src/export/*.test.js
+```

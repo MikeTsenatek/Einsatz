@@ -4,6 +4,8 @@ from django.db import models
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 
+from apps.missions.numbering import MissionNumberedModel
+
 
 def calculate_age(birthday, today=None):
     today = today or timezone.localdate()
@@ -12,7 +14,8 @@ def calculate_age(birthday, today=None):
     )
 
 
-class Patient(models.Model):
+class Patient(MissionNumberedModel):
+    counter_field = "patient_number_counter"
     mission = models.ForeignKey(
         "missions.Mission",
         on_delete=models.CASCADE,
@@ -32,6 +35,9 @@ class Patient(models.Model):
     city = models.CharField(max_length=50, null=True, blank=True)
     country = models.CharField(max_length=50, null=True, blank=True)
     history = AuditlogHistoryField(delete_related=False)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("mission", "number"), name="unique_patient_mission_number")]
 
     def save(self, *args, **kwargs):
         if self.birthday:

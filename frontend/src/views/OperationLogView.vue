@@ -232,11 +232,12 @@ onMounted(load)
     <div v-if="loading" class="operation-log-empty">Einträge werden geladen …</div>
     <div v-else-if="filteredEntries.length" class="operation-log-table-wrap">
       <table class="operation-log-table">
-        <colgroup><col class="col-time"><col class="col-priority"><col class="col-route"><col class="col-route"><col class="col-message"><col class="col-actions"></colgroup>
-        <thead><tr><th>Zeitpunkt</th><th>Priorität</th><th>Von</th><th>An</th><th>Meldung und Maßnahme</th><th><span class="sr-only">Aktionen</span></th></tr></thead>
+        <colgroup><col style="width: 5rem"><col class="col-time"><col class="col-priority"><col class="col-route"><col class="col-route"><col class="col-message"><col class="col-actions"></colgroup>
+        <thead><tr><th>Nr.</th><th>Zeitpunkt</th><th>Priorität</th><th>Von</th><th>An</th><th>Meldung und Maßnahme</th><th><span class="sr-only">Aktionen</span></th></tr></thead>
         <tbody>
           <template v-for="entry in filteredEntries" :key="entry.id">
             <tr class="operation-log-row" :class="{ 'operation-log-row--struck': entry.is_struck_out }">
+              <td>{{ entry.number }}</td>
               <td><time :datetime="entry.timestamp">{{ formatDate(entry.timestamp) }}</time></td>
               <td><span class="priority" :class="`priority--${entry.priority_level}`">P{{ entry.priority_level }} · {{ entry.priority_name }}</span><span v-if="entry.is_struck_out" class="struck-label">Gestrichen</span></td>
               <td class="route-cell">{{ entry.sender || '–' }}</td>
@@ -245,7 +246,7 @@ onMounted(load)
               <td><div class="operation-log-entry__actions"><button v-if="canChangeEntry && !entry.is_struck_out" @click="startEdit(entry)">Bearbeiten</button><button @click="toggleHistory(entry)">{{ openHistoryId === entry.id ? 'Verlauf schließen' : 'Verlauf' }}</button><button v-if="canChangeEntry && !entry.is_struck_out" class="strike-button" @click="strikeEntry(entry)">Streichen</button></div></td>
             </tr>
             <tr v-if="openHistoryId === entry.id" class="operation-log-history-row">
-              <td colspan="6">
+              <td colspan="7">
                 <section class="audit-history">
                   <p v-if="historyLoading">Verlauf wird geladen …</p>
                   <template v-else-if="histories[entry.id]?.length">

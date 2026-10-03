@@ -37,7 +37,12 @@ class TreatmentInline(admin.StackedInline):
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "mission", "birthday", "age", "gender", "city")
+    readonly_fields = ("number",)
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.readonly_fields + (("mission",) if obj else ())
+
+    list_display = ("number", "name", "mission", "birthday", "age", "gender", "city")
     list_filter = ("mission", "gender", "country")
     search_fields = ("name", "street", "zip_code", "city", "country")
     autocomplete_fields = ("mission", "gender")

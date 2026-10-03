@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from .numbering import MissionNumberedModel
+
 
 class Mission(models.Model):
     class State(models.TextChoices):
@@ -18,6 +20,8 @@ class Mission(models.Model):
         choices=State.choices,
         default=State.ACTIVE,
     )
+    patient_number_counter = models.PositiveIntegerField(default=0, editable=False)
+    operation_log_number_counter = models.PositiveIntegerField(default=0, editable=False)
     history = AuditlogHistoryField(delete_related=False)
 
     class Meta:
@@ -43,7 +47,8 @@ class OperationLogEntryQuerySet(models.QuerySet):
         raise ValidationError(_("Einsatztagebuch-Einträge müssen einzeln und auditierbar geändert werden."))
 
 
-class OperationLogEntry(models.Model):
+class OperationLogEntry(MissionNumberedModel):
+    counter_field = "operation_log_number_counter"
     mission = models.ForeignKey(
         Mission,
         verbose_name=_("Einsatz"),
@@ -68,6 +73,7 @@ class OperationLogEntry(models.Model):
     class Meta:
         verbose_name = _("Einsatztagebucheintrag")
         verbose_name_plural = _("Einsatztagebucheinträge")
+        constraints = [models.UniqueConstraint(fields=("mission", "number"), name="unique_operation_log_mission_number")]
         ordering = ("-timestamp", "-pk")
         default_permissions = ("add", "change", "view")
 

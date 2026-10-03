@@ -21,13 +21,15 @@ class PatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = (
-            "id", "mission", "name", "display_name",
+            "id", "number", "mission", "name", "display_name",
             "birthday", "age", "gender", "street", "zip_code", "city", "country",
             "treatment_count",
         )
-        read_only_fields = ("id", "display_name", "treatment_count")
+        read_only_fields = ("id", "number", "display_name", "treatment_count")
 
     def validate(self, attrs):
+        if self.instance and attrs.get("mission", self.instance.mission).pk != self.instance.mission_id:
+            raise serializers.ValidationError({"mission": "Der Einsatz eines nummerierten Patienten darf nicht geändert werden."})
         birthday = attrs.get("birthday", getattr(self.instance, "birthday", None))
         if birthday:
             if birthday > timezone.localdate():
@@ -63,7 +65,8 @@ class TreatmentPatientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        fields = ("id", "name", "display_name", "birthday", "age", "gender")
+        fields = ("id", "number", "name", "display_name", "birthday", "age", "gender")
+        read_only_fields = ("number",)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

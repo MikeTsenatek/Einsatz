@@ -27,6 +27,7 @@ class OperationLogEntrySerializer(serializers.ModelSerializer):
         model = OperationLogEntry
         fields = (
             "id",
+            "number",
             "mission",
             "sender",
             "recipient",
@@ -38,5 +39,5 @@ class OperationLogEntrySerializer(serializers.ModelSerializer):
             "priority_level",
             "is_struck_out",
         )
-        read_only_fields = ("id", "mission", "is_struck_out", "priority_name", "priority_level")
+        read_only_fields = ("id", "number", "mission", "is_struck_out", "priority_name", "priority_level")
 

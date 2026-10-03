@@ -15,8 +15,13 @@ class MissionAdmin(AuditlogHistoryAdminMixin, admin.ModelAdmin):
 
 @admin.register(OperationLogEntry)
 class OperationLogEntryAdmin(AuditlogHistoryAdminMixin, admin.ModelAdmin):
+    readonly_fields = ("number",)
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.readonly_fields + (("mission",) if obj else ())
+
     list_display = (
-        "id",
+        "number",
         "mission",
         "timestamp",
         "sender",

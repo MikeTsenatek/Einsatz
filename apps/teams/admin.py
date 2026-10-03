@@ -5,7 +5,8 @@ from .models import Helper, HelperMission, Team
 
 @admin.register(Helper)
 class HelperAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "birthday", "city", "country")
+    autocomplete_fields = ("hiorg",)
+    list_display = ("id", "name", "birthday", "hiorg", "city", "country")
     list_filter = ("country", "city")
     search_fields = ("name", "street", "zip_code", "city", "country")
     ordering = ("name",)

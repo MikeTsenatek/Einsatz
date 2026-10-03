@@ -1,18 +1,22 @@
 from rest_framework import serializers
 
 from .models import Helper, HelperMission, Team
+from apps.mgmt.models import HiOrg
+from apps.mgmt.serializers import HiOrgSerializer
 
 
 class HelperDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Helper
-        fields = ("name", "birthday", "street", "zip_code", "city", "country")
+        fields = ("name", "birthday", "hiorg", "street", "zip_code", "city", "country")
 
 
 class HelperSerializer(serializers.ModelSerializer):
+    hiorg = HiOrgSerializer(read_only=True)
+
     class Meta:
         model = Helper
-        fields = ("id", "name", "birthday", "street", "zip_code", "city", "country")
+        fields = ("id", "name", "birthday", "hiorg", "street", "zip_code", "city", "country")
         read_only_fields = ("id",)
 
 
@@ -36,6 +40,7 @@ class TeamSerializer(serializers.ModelSerializer):
 
 
 class HelperMissionSerializer(serializers.ModelSerializer):
+    helper_hiorg = serializers.PrimaryKeyRelatedField(queryset=HiOrg.objects.all(), required=False, allow_null=True, write_only=True)
     helper_birthday = serializers.DateField(required=False, allow_null=True, write_only=True)
     helper = HelperSerializer(read_only=True)
     helper_id = serializers.PrimaryKeyRelatedField(
@@ -51,7 +56,7 @@ class HelperMissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = HelperMission
         fields = (
-            "id", "mission", "helper", "helper_id", "helper_details", "helper_birthday",
+            "id", "mission", "helper", "helper_id", "helper_details", "helper_birthday", "helper_hiorg",
             "team", "team_id", "start_date", "planned_end_date", "end_date",
         )
         read_only_fields = ("id", "mission")
@@ -85,7 +90,9 @@ class HelperMissionSerializer(serializers.ModelSerializer):
 
 
 class HelperSuggestionSerializer(serializers.ModelSerializer):
+    hiorg = HiOrgSerializer(read_only=True)
+
     class Meta:
         model = Helper
-        fields = ("id", "name", "birthday")
+        fields = ("id", "name", "birthday", "hiorg")
         read_only_fields = fields

@@ -116,3 +116,23 @@ class DischargeDestinationApiTests(APITestCase):
         for cache_name in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
             user.__dict__.pop(cache_name, None)
         self.assertEqual(self.client.post(url, {"name": "Eigener Vorschlag"}).status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class HiOrgApiTests(APITestCase):
+    fixtures = ("initial_data.json",)
+
+    def test_excel_entries_and_read_only_endpoint(self):
+        from .models import HiOrg
+        user = get_user_model().objects.create_user(username="hiorg-user")
+        self.client.force_authenticate(user)
+        self.assertEqual(HiOrg.objects.count(), 3227)
+        response = self.client.get("/api/hiorgs/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3227)
+        entry = response.data[0]
+        self.assertEqual(entry["label"], " - ".join(entry[field] for field in ("hiorg", "kreisverband", "gemeinschaft", "gliederung")))
+        self.assertEqual(self.client.post("/api/hiorgs/", {"hiorg": "Freitext"}, format="json").status_code, 405)
+        user.groups.clear()
+        for cache_name in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
+            user.__dict__.pop(cache_name, None)
+        self.assertEqual(self.client.get("/api/hiorgs/").status_code, 403)

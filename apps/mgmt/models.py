@@ -55,3 +55,18 @@ class DischargeDestination(NamedReferenceModel):
         verbose_name = "Entlassziel"
         verbose_name_plural = "Entlassziele"
         ordering = ("pk",)
+
+
+class HiOrg(models.Model):
+    hiorg = models.CharField("HiOrg", max_length=200)
+    kreisverband = models.CharField("Kreisverband", max_length=200, blank=True)
+    gemeinschaft = models.CharField("Gemeinschaft", max_length=200, blank=True)
+    gliederung = models.CharField("Gliederung", max_length=200, blank=True)
+
+    class Meta:
+        verbose_name = "HiOrg-Gliederung"
+        verbose_name_plural = "HiOrg-Gliederungen"
+        ordering = ("hiorg", "kreisverband", "gemeinschaft", "gliederung", "pk")
+
+    def __str__(self):
+        return " - ".join((self.hiorg, self.kreisverband, self.gemeinschaft, self.gliederung))

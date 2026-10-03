@@ -207,3 +207,23 @@ Ohne Verbindung erscheint beim erneuten Öffnen eine Offline-Hinweisseite.
 Einsatz-, Patienten- und API-Daten werden vom Service Worker nicht gespeichert;
 für die Arbeit mit aktuellen Daten ist eine Verbindung erforderlich. Im
 Vite-Entwicklungsmodus wird kein Service Worker registriert.
+
+
+## HiOrg-Stammdaten für Helfer
+
+Die 3.227 Zeilen aus `HiOrgs.xls` sind in `apps/mgmt/fixtures/initial_data.json`
+als HiOrg-Stammdaten enthalten, einschließlich der identischen Excel-Zeilen.
+Die Excel-Datei wird zur Laufzeit nicht benötigt und kann anschließend entfernt werden.
+Nach dem Update die Migrationen und die Stammdaten laden:
+
+```sh
+python manage.py migrate
+python manage.py loaddata initial_data
+```
+
+Im Helferformular kann über Autocomplete ein vorhandener Eintrag gewählt werden.
+Die Anzeige lautet `HiOrg - Kreisverband - Gemeinschaft - Gliederung`.
+Freitext ist nicht zulässig. Die optionale Verknüpfung wird am Helfer gespeichert
+und bei der Wiederverwendung übernommen. Für die Liste ist `mgmt.view_hiorg`,
+für Änderungen bestehender Helfer `teams.change_helper` erforderlich.
+Die Django-Administration bietet ebenfalls eine Autocomplete-Auswahl.

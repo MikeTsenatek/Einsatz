@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { api } from '../api'
+import HiOrgAutocomplete from '../components/HiOrgAutocomplete.vue'
 import { hasPermission } from '../permissions'
 
 const props = defineProps({ mission: { type: Object, required: true }, user: Object })
@@ -79,6 +80,7 @@ watch([() => form.value.name, () => form.value.birthday, formOpen, editing], () 
 function selectHelper(helper) {
   form.value.name = helper.name
   form.value.birthday = helper.birthday || ''
+  form.value.hiorg_id = helper.hiorg?.id || null
   selectedHelper.value = helper
   stopHelperSearch()
 }
@@ -92,7 +94,7 @@ function localDateTime(value = new Date()) {
 }
 
 function emptyForm() {
-  return { name: '', birthday: '', team_id: '', start_date: localDateTime(), planned_end_date: '', end_date: '' }
+  return { name: '', birthday: '', hiorg_id: null, team_id: '', start_date: localDateTime(), planned_end_date: '', end_date: '' }
 }
 
 const activeCount = computed(() => assignments.value.filter((item) => !item.end_date).length)
@@ -139,6 +141,7 @@ function editAssignment(item) {
   form.value = {
     name: item.helper.name,
     birthday: item.helper.birthday || '',
+    hiorg_id: item.helper.hiorg?.id || null,
     team_id: item.team?.id || '',
     start_date: localDateTime(item.start_date),
     planned_end_date: item.planned_end_date ? localDateTime(item.planned_end_date) : '',
@@ -158,7 +161,11 @@ async function save() {
   }
   if (!editing.value) {
     if (selectedHelper.value) payload.helper_id = selectedHelper.value.id
-    else payload.helper_details = { name: form.value.name.trim(), birthday: form.value.birthday || null }
+    else payload.helper_details = { name: form.value.name.trim(), birthday: form.value.birthday || null, hiorg: form.value.hiorg_id }
+  }
+  const existingHelper = editing.value?.helper || selectedHelper.value
+  if (existingHelper && canChangeHelper.value && form.value.hiorg_id !== (existingHelper.hiorg?.id || null)) {
+    payload.helper_hiorg = form.value.hiorg_id
   }
   if (editing.value && canChangeHelper.value && form.value.birthday !== (editing.value.helper.birthday || '')) {
     payload.helper_birthday = form.value.birthday || null
@@ -378,6 +385,7 @@ onMounted(load)
           </ul>
         </div>
         <label>Geburtsdatum <small>optional</small><input v-model="form.birthday" type="date" :disabled="Boolean(editing) && !canChangeHelper"></label>
+        <HiOrgAutocomplete v-model="form.hiorg_id" :disabled="Boolean(editing || selectedHelper) && !canChangeHelper" />
         <label>Team <small>optional</small><select v-model="form.team_id"><option value="">Kein Team</option><option v-for="team in selectableTeams" :key="team.id" :value="team.id">{{ team.name }}</option></select></label>
         <label>Dienstbeginn<input v-model="form.start_date" required type="datetime-local"></label>
         <label>Geplantes Dienstende <small>optional</small><input v-model="form.planned_end_date" type="datetime-local" :min="form.start_date"></label>
@@ -394,7 +402,7 @@ onMounted(load)
       <table class="helper-table">
         <thead><tr><th>Helfer</th><th>Team</th><th>Dienstbeginn</th><th>Geplant bis</th><th>Dienstende</th><th>Status</th><th>Aktionen</th></tr></thead>
         <tbody><tr v-for="item in visibleAssignments" :key="item.id">
-          <td><strong>{{ item.helper.name }}</strong><small v-if="item.helper.birthday">{{ item.helper.birthday }}</small></td>
+          <td><strong>{{ item.helper.name }}</strong><small v-if="item.helper.birthday">{{ item.helper.birthday }}</small><small v-if="item.helper.hiorg">{{ item.helper.hiorg.label }}</small></td>
           <td>{{ item.team?.name || '–' }}</td>
           <td>{{ formatDate(item.start_date) }}</td><td>{{ item.planned_end_date ? formatDate(item.planned_end_date) : (item.team?.planned_end_date ? formatDate(item.team.planned_end_date) + ' (Team)' : '–') }}</td><td>{{ item.end_date ? formatDate(item.end_date) : '–' }}</td>
           <td><span class="duty-status" :class="{ done: item.end_date }">{{ item.end_date ? 'Außer Dienst' : 'Im Dienst' }}</span></td>

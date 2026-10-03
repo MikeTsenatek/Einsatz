@@ -4,6 +4,7 @@ from django.db import models
 class Helper(models.Model):
     name = models.CharField(max_length=100)
     birthday = models.DateField(null=True, blank=True)
+    hiorg = models.ForeignKey("mgmt.HiOrg", on_delete=models.PROTECT, null=True, blank=True)
     street = models.CharField(max_length=100, null=True, blank=True)
     zip_code = models.CharField(max_length=10, null=True, blank=True)
     city = models.CharField(max_length=50, null=True, blank=True)

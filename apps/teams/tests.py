@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 from apps.missions.models import Mission
 
 from .models import Helper, HelperMission, Team
+from apps.mgmt.models import HiOrg
 
 
 class HelperMissionApiTests(APITestCase):
@@ -76,6 +77,53 @@ class HelperMissionApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         helper.refresh_from_db()
         self.assertIsNone(helper.birthday)
+
+    def test_helper_hiorg_selection_create_update_and_validation(self):
+        org = HiOrg.objects.create(hiorg="BRK", kreisverband="Test", gemeinschaft="Bereitschaft", gliederung="Ort")
+        other = HiOrg.objects.create(hiorg="ASB", kreisverband="Anderer Kreis")
+        self.grant("add_helper", "add_helpermission", "change_helpermission")
+        payload = self.payload()
+        payload["helper_details"]["hiorg"] = org.pk
+        response = self.client.post(reverse("mission-helper-list", args=(self.mission.pk,)), payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["helper"]["hiorg"]["label"], "BRK - Test - Bereitschaft - Ort")
+        helper = Helper.objects.get(pk=response.data["helper"]["id"])
+        self.assertEqual(helper.hiorg_id, org.pk)
+        url = reverse("mission-helper-detail", args=(self.mission.pk, response.data["id"]))
+        response = self.client.patch(url, {"helper_hiorg": other.pk}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        helper.refresh_from_db()
+        self.assertEqual(helper.hiorg_id, org.pk)
+        self.grant("change_helper")
+        response = self.client.patch(url, {"helper_hiorg": other.pk}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        helper.refresh_from_db()
+        self.assertEqual(helper.hiorg_id, other.pk)
+        for invalid in ("Freitext", 999999):
+            response = self.client.patch(url, {"helper_hiorg": invalid}, format="json")
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.patch(url, {"helper_hiorg": None}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        helper.refresh_from_db()
+        self.assertIsNone(helper.hiorg_id)
+
+    def test_registration_reuses_helper_and_saves_selected_hiorg(self):
+        org = HiOrg.objects.create(hiorg="BRK")
+        helper = Helper.objects.create(name="Erika Muster", birthday="1990-05-10")
+        self.grant("add_helpermission")
+        payload = self.payload()
+        payload["helper_details"]["hiorg"] = org.pk
+        url = reverse("mission-helper-list", args=(self.mission.pk,))
+        response = self.client.post(url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(HelperMission.objects.count(), 0)
+        self.grant("change_helper")
+        response = self.client.post(url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["helper"]["id"], helper.pk)
+        helper.refresh_from_db()
+        self.assertEqual(helper.hiorg_id, org.pk)
+        self.assertEqual(Helper.objects.count(), 1)
 
     def test_list_is_limited_to_mission(self):
         helper = Helper.objects.create(name="Max Muster")
@@ -316,7 +364,7 @@ class HelperMissionApiTests(APITestCase):
         response = self.client.get(reverse("helper-search"), {"name": "  Muster  "})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0], {"id": helper.pk, "name": "Erika Muster", "birthday": "1990-05-10"})
+        self.assertEqual(response.data[0], {"id": helper.pk, "name": "Erika Muster", "birthday": "1990-05-10", "hiorg": None})
 
     def test_search_requires_permission_and_minimum_query(self):
         Helper.objects.create(name="Erika Muster")

@@ -53,7 +53,7 @@ class MissionHelperMissionViewSet(ModelViewSet):
     def get_queryset(self):
         return HelperMission.objects.filter(
             mission_id=self.kwargs["mission_pk"]
-        ).select_related("helper", "team")
+        ).select_related("helper", "helper__hiorg", "team")
 
     def resolve_helper(self, serializer):
         selected_helper = serializer.validated_data.get("helper")
@@ -72,6 +72,11 @@ class MissionHelperMissionViewSet(ModelViewSet):
             else matches.filter(birthday__isnull=True).first()
         )
         if existing:
+            if "hiorg" in details and details["hiorg"] != existing.hiorg:
+                if not self.request.user.has_perm("teams.change_helper"):
+                    raise PermissionDenied("Zum Ändern der HiOrg fehlt die Berechtigung teams.change_helper.")
+                existing.hiorg = details["hiorg"]
+                existing.save(update_fields=("hiorg",))
             return existing
         if not self.request.user.has_perm("teams.add_helper"):
             raise PermissionDenied("Für das Anlegen eines neuen Helfers fehlt die Berechtigung.")
@@ -90,6 +95,10 @@ class MissionHelperMissionViewSet(ModelViewSet):
 
     def save(self, serializer):
         mission = self.get_mission()
+        hiorg_changed = "helper_hiorg" in serializer.validated_data
+        hiorg = serializer.validated_data.pop("helper_hiorg", None)
+        if hiorg_changed and not self.request.user.has_perm("teams.change_helper"):
+            raise PermissionDenied("Zum Ändern der HiOrg fehlt die Berechtigung teams.change_helper.")
         birthday_changed = "helper_birthday" in serializer.validated_data
         birthday = serializer.validated_data.pop("helper_birthday", None)
         if birthday_changed and not self.request.user.has_perm("teams.change_helper"):
@@ -119,6 +128,9 @@ class MissionHelperMissionViewSet(ModelViewSet):
                     raise ValidationError({"team_id": "Der Helfer ist in diesem Zeitraum bereits einem anderen Team zugeordnet."})
             if end_date is None:
                 self.validate_helper(helper, mission, serializer.instance)
+            if hiorg_changed:
+                helper.hiorg = hiorg
+                helper.save(update_fields=("hiorg",))
             if birthday_changed:
                 helper.birthday = birthday
                 helper.save(update_fields=("birthday",))
@@ -140,7 +152,7 @@ class HelperSearchView(ListAPIView):
         name = self.request.query_params.get("name", "").strip()
         if len(name) < 2:
             return Helper.objects.none()
-        return Helper.objects.filter(name__icontains=name).order_by("name", "birthday", "pk")[:20]
+        return Helper.objects.select_related("hiorg").filter(name__icontains=name).order_by("name", "birthday", "pk")[:20]
 
 
 class HelperDeleteView(DestroyAPIView):

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DischargeDestination, AssigningEnum, GenderEnum, LeavingEnum, PriorityEnum, TreatmentKeyword
+from .models import HiOrg, DischargeDestination, AssigningEnum, GenderEnum, LeavingEnum, PriorityEnum, TreatmentKeyword
 
 
 @admin.register(AssigningEnum)
@@ -43,3 +43,10 @@ class DischargeDestinationAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("name",)
     ordering = ("pk",)
+
+
+
+@admin.register(HiOrg)
+class HiOrgAdmin(admin.ModelAdmin):
+    list_display = ("hiorg", "kreisverband", "gemeinschaft", "gliederung")
+    search_fields = ("hiorg", "kreisverband", "gemeinschaft", "gliederung")

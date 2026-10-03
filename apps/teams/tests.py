@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -434,3 +435,54 @@ class HelperMissionApiTests(APITestCase):
     def test_deleting_missing_helper_returns_not_found(self):
         self.grant("delete_helper", "delete_helpermission")
         self.assertEqual(self.client.delete(reverse("helper-delete", args=(999999,))).status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TeamNameReuseTests(APITestCase):
+    setUp = HelperMissionApiTests.setUp
+    grant = HelperMissionApiTests.grant
+    def test_name_can_be_reused_after_archiving_repeatedly(self):
+        self.grant("add_team", "change_team", "change_helpermission")
+        url = reverse("mission-team-list", args=(self.mission.pk,))
+        for _ in range(3):
+            response = self.client.post(url, {"name": "Sanität"}, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            response = self.client.patch(
+                reverse("mission-team-end-duty", args=(self.mission.pk, response.data["id"])),
+                {}, format="json",
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.post(url, {"name": "Sanität"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(url, {"name": "sanität"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Team.objects.filter(end_date__isnull=True).count(), 1)
+
+    def test_archived_team_can_be_renamed_to_active_name(self):
+        self.grant("change_team")
+        Team.objects.create(mission=self.mission, name="Sanität")
+        archived = Team.objects.create(
+            mission=self.mission, name="Alt", end_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        response = self.client.patch(
+            reverse("mission-team-detail", args=(self.mission.pk, archived.pk)),
+            {"name": "Sanität"}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_active_team_can_be_renamed_to_archived_name(self):
+        self.grant("change_team")
+        Team.objects.create(
+            mission=self.mission, name="Sanität", end_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        active = Team.objects.create(mission=self.mission, name="Neu")
+        response = self.client.patch(
+            reverse("mission-team-detail", args=(self.mission.pk, active.pk)),
+            {"name": "Sanität"}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_database_rejects_duplicate_active_names(self):
+        Team.objects.create(mission=self.mission, name="Sanität")
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Team.objects.create(mission=self.mission, name="Sanität")
+        Team.objects.create(mission=self.other_mission, name="Sanität")

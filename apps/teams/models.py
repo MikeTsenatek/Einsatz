@@ -30,7 +30,9 @@ class Team(models.Model):
         ordering = ("name", "pk")
         constraints = (
             models.UniqueConstraint(
-                fields=("mission", "name"), name="unique_team_name_per_mission"
+                fields=("mission", "name"),
+                condition=models.Q(end_date__isnull=True),
+                name="unique_active_team_name_per_mission"
             ),
         )
 

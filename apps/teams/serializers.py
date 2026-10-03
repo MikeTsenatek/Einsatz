@@ -29,12 +29,16 @@ class TeamSerializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
         mission_id = getattr(self.context.get("view"), "kwargs", {}).get("mission_pk")
-        teams = Team.objects.filter(mission_id=mission_id, name__iexact=value.strip())
+        if self.instance is not None and self.instance.end_date is not None:
+            return value.strip()
+        teams = Team.objects.filter(
+            mission_id=mission_id, name__iexact=value.strip(), end_date__isnull=True
+        )
         if self.instance is not None:
             teams = teams.exclude(pk=self.instance.pk)
         if teams.exists():
             raise serializers.ValidationError(
-                "Ein Team mit diesem Namen existiert bereits."
+                "Ein aktives Team mit diesem Namen existiert bereits."
             )
         return value.strip()
 

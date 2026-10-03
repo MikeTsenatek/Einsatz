@@ -80,3 +80,39 @@ class TreatmentKeywordApiTests(APITestCase):
             [keyword["name"] for keyword in response.data],
             ["Aktiver Vorschlag"],
         )
+
+
+from django.contrib.auth.models import Permission
+from .models import DischargeDestination
+
+
+class DischargeDestinationTests(TestCase):
+    fixtures = ("initial_data.json",)
+
+    def test_fixture_contains_requested_suggestions(self):
+        self.assertEqual(list(DischargeDestination.objects.filter(is_active=True).values_list("name", flat=True)), [
+            "Zurück zur Veranstaltung", "Nach Hause", "Krankenhaus",
+        ])
+        self.assertTrue(admin.site.is_registered(DischargeDestination))
+
+
+class DischargeDestinationApiTests(APITestCase):
+    def test_suggestions_require_permission_and_hide_inactive_entries(self):
+        active = DischargeDestination.objects.create(name="Nach Hause")
+        DischargeDestination.objects.create(name="Inaktiv", is_active=False)
+        url = reverse("discharge-destination-list")
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)
+        user = get_user_model().objects.create_user(username="discharge-user")
+        user.groups.clear()
+        self.client.force_authenticate(user)
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)
+        user.user_permissions.add(Permission.objects.get(content_type__app_label="mgmt", codename="view_dischargedestination"))
+        for cache_name in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
+            user.__dict__.pop(cache_name, None)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [{"id": active.pk, "name": "Nach Hause"}])
+        user.user_permissions.add(Permission.objects.get(content_type__app_label="mgmt", codename="add_dischargedestination"))
+        for cache_name in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
+            user.__dict__.pop(cache_name, None)
+        self.assertEqual(self.client.post(url, {"name": "Eigener Vorschlag"}).status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

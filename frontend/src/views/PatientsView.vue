@@ -11,6 +11,9 @@ const canChangePatient = computed(() => hasPermission(props.user, 'patients.chan
 const canDeletePatient = computed(() => hasPermission(props.user, 'patients.delete_patient'))
 const treatments = ref([])
 const treatmentKeywords = ref([])
+const dischargeDestinations = ref([])
+const completingTreatment = ref(null)
+const completionForm = ref({ end_date: '', discharge_destination: '' })
 const keywordAutocompleteOpen = ref(false)
 const activeKeywordIndex = ref(-1)
 const patientSuggestions = ref([])
@@ -20,7 +23,7 @@ const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
 const panel = ref(null)
-const treatmentForm = ref({ patient: '', patient_name: '', patient_birthday: '', patient_age: '', start_date: localDateTime(), end_date: '', keyword: '', notes: '' })
+const treatmentForm = ref({ patient: '', patient_name: '', patient_birthday: '', patient_age: '', start_date: localDateTime(), end_date: '', keyword: '', discharge_destination: '', notes: '' })
 const editingTreatment = ref(null)
 const originalPatient = ref(null)
 const patientChoiceRequired = ref(false)
@@ -56,10 +59,10 @@ function syncTreatmentAge() {
 }
 
 
-function localDateTime(value = new Date()) {
+function localDateTime(value = new Date(), includeSeconds = false) {
   const date = new Date(value)
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
-  return date.toISOString().slice(0, 16)
+  return date.toISOString().slice(0, includeSeconds ? 19 : 16)
 }
 
 const unassignedCount = computed(() => treatments.value.filter((treatment) => !treatment.patient).length)
@@ -75,14 +78,16 @@ async function load(page = 1) {
   loading.value = true
   error.value = ''
   try {
-    const [treatmentData, keywordData] = await Promise.all([
+    const [treatmentData, keywordData, destinationData] = await Promise.all([
       api('/missions/' + props.mission.id + '/treatments/?page=' + page),
       api('/treatment-keywords/'),
+      hasPermission(props.user, 'mgmt.view_dischargedestination') ? api('/discharge-destinations/') : Promise.resolve([]),
     ])
     treatments.value = treatmentData.results
     totalTreatments.value = treatmentData.count
     currentPage.value = page
     treatmentKeywords.value = keywordData
+    dischargeDestinations.value = destinationData
   } catch (requestError) {
     error.value = requestError.message
   } finally {
@@ -99,7 +104,7 @@ function startTreatment() {
   historyPatient.value = null
   historyTreatments.value = []
   treatmentForm.value = {
-    patient: '', patient_name: '', patient_birthday: '', patient_age: '', start_date: localDateTime(), end_date: '', keyword: '', notes: '',
+    patient: '', patient_name: '', patient_birthday: '', patient_age: '', start_date: localDateTime(), end_date: '', keyword: '', discharge_destination: '', notes: '',
   }
   panel.value = 'treatment'
 }
@@ -118,6 +123,7 @@ function editTreatment(treatment) {
     start_date: localDateTime(treatment.start_date),
     end_date: treatment.end_date ? localDateTime(treatment.end_date) : '',
     keyword: treatment.keyword || '',
+    discharge_destination: treatment.discharge_destination || '',
     notes: treatment.notes || '',
   }
   panel.value = 'treatment'
@@ -126,6 +132,7 @@ function editTreatment(treatment) {
 }
 
 function closeTreatmentForm() {
+  completingTreatment.value = null
   panel.value = null
   editingTreatment.value = null
   originalPatient.value = null
@@ -157,6 +164,7 @@ async function saveTreatment() {
       : null,
     keyword: treatmentForm.value.keyword,
     notes: treatmentForm.value.notes,
+    discharge_destination: treatmentForm.value.discharge_destination.trim(),
   }
   if (treatmentForm.value.patient_name.trim()) {
     payload.patient_details = {
@@ -194,17 +202,42 @@ function choosePatientEdit(choice) {
   saveTreatment()
 }
 
-async function completeTreatment(treatment) {
+function completeTreatment(treatment) {
   if (!treatment.patient || !treatment.keyword?.trim() || treatment.end_date) return
+  closeTreatmentForm()
+  completingTreatment.value = treatment
+  completionForm.value = {
+    end_date: localDateTime(new Date(), true),
+    discharge_destination: treatment.discharge_destination || '',
+  }
+  panel.value = 'completion'
+  error.value = ''
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+async function saveCompletion() {
+  if (saving.value || !completingTreatment.value) return
+  const dischargeDestination = completionForm.value.discharge_destination.trim()
+  if (!dischargeDestination) {
+    error.value = 'Zum Abschließen einer Behandlung ist ein Entlassziel erforderlich.'
+    return
+  }
+  saving.value = true
   error.value = ''
   try {
     const updated = await api(
-      '/missions/' + props.mission.id + '/treatments/' + treatment.id + '/',
-      { method: 'PATCH', body: JSON.stringify({ end_date: new Date().toISOString() }) },
+      '/missions/' + props.mission.id + '/treatments/' + completingTreatment.value.id + '/',
+      { method: 'PATCH', body: JSON.stringify({
+        end_date: new Date(completionForm.value.end_date).toISOString(),
+        discharge_destination: dischargeDestination,
+      }) },
     )
     treatments.value = treatments.value.map((item) => item.id === updated.id ? updated : item)
+    closeTreatmentForm()
   } catch (requestError) {
     error.value = requestError.message
+  } finally {
+    saving.value = false
   }
 }
 
@@ -213,7 +246,7 @@ async function deleteTreatment(treatment) {
   error.value = ""
   try {
     await api("/missions/" + props.mission.id + "/treatments/" + treatment.id + "/", { method: "DELETE" })
-    if (editingTreatment.value?.id === treatment.id) closeTreatmentForm()
+    if (editingTreatment.value?.id === treatment.id || completingTreatment.value?.id === treatment.id) closeTreatmentForm()
     await load(1)
   } catch (requestError) {
     error.value = requestError.message
@@ -358,11 +391,25 @@ onMounted(load)
 
     <p v-if="error" class="error" role="alert">{{ error }}</p>
 
+    <datalist id="discharge-destination-suggestions">
+      <option v-for="destination in dischargeDestinations" :key="destination.id" :value="destination.name"></option>
+    </datalist>
+
+    <form v-if="panel === 'completion'" class="patient-form" @submit.prevent="saveCompletion">
+      <div><h3>Behandlung Nr. {{ completingTreatment.number }} abschließen</h3><p class="muted">Nr. {{ completingTreatment.patient.number }} · {{ completingTreatment.patient.display_name }}</p></div>
+      <div class="form-grid">
+        <label>Ende<input v-model="completionForm.end_date" required type="datetime-local" step="1" :min="localDateTime(completingTreatment.start_date, true)"></label>
+        <label>Entlassziel <small>erforderlich · Freitext oder Vorschlag</small><input v-model="completionForm.discharge_destination" required maxlength="200" list="discharge-destination-suggestions" placeholder="Entlassziel eingeben"></label>
+      </div>
+      <div class="operation-log-form__actions"><button type="button" class="secondary" :disabled="saving" @click="closeTreatmentForm">Abbrechen</button><button class="primary small" :disabled="saving">{{ saving ? 'Wird gespeichert …' : 'Behandlung abschließen' }}</button></div>
+    </form>
+
     <form v-if="panel === 'treatment'" class="patient-form" @submit.prevent="saveTreatment">
-      <div><h3>{{ editingTreatment ? 'Behandlung bearbeiten' : 'Behandlung beginnen' }}</h3><p class="muted">Sie kann ohne Patient begonnen, aber erst nach einer Zuordnung abgeschlossen werden.</p></div>
+      <div><h3>{{ editingTreatment ? 'Behandlung Nr. ' + editingTreatment.number + ' bearbeiten' : 'Behandlung beginnen' }}</h3><p class="muted">Sie kann ohne Patient begonnen, aber erst nach einer Zuordnung abgeschlossen werden.</p></div>
       <div class="form-grid">
         <div class="patient-capture form-grid__wide"><p>Patient <small>für Beginn optional</small></p><div class="form-grid"><label>Name<span class="autocomplete"><input v-model="treatmentForm.patient_name" maxlength="100" autocomplete="off" placeholder="Name eingeben" :disabled="Boolean(editingTreatment && treatmentForm.patient && !canChangePatient)" @input="patientDataChanged" @focus="searchPatients" @blur="closePatientAutocomplete"><ul v-if="patientAutocompleteOpen && patientSuggestions.length" role="listbox"><li v-for="patient in patientSuggestions" :key="patient.id" role="option" @mousedown.prevent="selectPatient(patient)"><strong>Nr. {{ patient.number }} · {{ patient.name }}</strong><small>{{ patient.birthday || (patient.age ? patient.age + ' Jahre' : 'Geburtsdatum unbekannt') }}</small></li></ul></span></label><label>Geburtsdatum <small>optional</small><input v-model="treatmentForm.patient_birthday" type="date" :disabled="Boolean(editingTreatment && treatmentForm.patient && !canChangePatient)" @input="syncTreatmentAge"></label><label>Alter <small>{{ treatmentForm.patient_birthday ? 'aus Geburtsdatum berechnet' : 'optional' }}</small><input v-model.number="treatmentForm.patient_age" type="number" min="0" max="130" :disabled="Boolean(treatmentForm.patient_birthday) || Boolean(editingTreatment && treatmentForm.patient && !canChangePatient)" @input="patientDataChanged"></label></div><span v-if="treatmentForm.patient" class="matched-patient">✓ Verknüpfter Patient – Änderungen aktualisieren seine Stammdaten</span><span v-else-if="treatmentForm.patient_name.trim()" class="new-patient">Neuer Patient, falls kein eindeutiger Treffer vorhanden ist</span></div><label>Beginn<input v-model="treatmentForm.start_date" required type="datetime-local"></label><label v-if="editingTreatment">Ende <small>nur mit Patient</small><input v-model="treatmentForm.end_date" type="datetime-local" :disabled="!treatmentForm.patient && !treatmentForm.patient_name.trim()"></label>
         <label>Stichwort <small>zum Abschließen erforderlich · Freitext</small><span class="autocomplete"><input v-model="treatmentForm.keyword" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" :aria-expanded="keywordAutocompleteOpen" :aria-activedescendant="activeKeywordIndex >= 0 ? 'keyword-option-' + activeKeywordIndex : undefined" aria-controls="keyword-suggestions" placeholder="Stichwort eingeben" @focus="keywordAutocompleteOpen = true" @input="keywordAutocompleteOpen = true; activeKeywordIndex = -1" @blur="closeKeywordAutocomplete" @keydown.down.prevent="moveKeywordSelection(1)" @keydown.up.prevent="moveKeywordSelection(-1)" @keydown.enter="selectActiveKeyword($event)" @keydown.esc="keywordAutocompleteOpen = false"><ul v-if="keywordAutocompleteOpen && filteredKeywords.length" id="keyword-suggestions" role="listbox"><li v-for="(keyword, index) in filteredKeywords" :id="'keyword-option-' + index" :key="keyword.id" role="option" :aria-selected="index === activeKeywordIndex" :class="{ active: index === activeKeywordIndex }" @mouseenter="activeKeywordIndex = index" @mousedown.prevent="selectKeyword(keyword)">{{ keyword.name }}</li></ul></span></label>
+        <label>Entlassziel <small>zum Abschließen erforderlich · Freitext oder Vorschlag</small><input v-model="treatmentForm.discharge_destination" :required="Boolean(treatmentForm.end_date)" maxlength="200" list="discharge-destination-suggestions" placeholder="Entlassziel eingeben"></label>
         <label class="form-grid__wide">Notizen <small>optional</small><textarea v-model.trim="treatmentForm.notes" rows="3"></textarea></label>
       </div>
       <div v-if="patientChoiceRequired" class="patient-edit-choice" role="alert">
@@ -374,11 +421,13 @@ onMounted(load)
         <div v-if="historyLoading" class="compact-empty">Historie wird geladen …</div>
         <div v-else-if="historyTreatments.length" class="treatment-table-wrap">
           <table class="treatment-table treatment-history-table">
-            <thead><tr><th>Zeitraum</th><th>Stichwort</th><th>Status</th></tr></thead>
+            <thead><tr><th>Behandlungsnr.</th><th>Zeitraum</th><th>Stichwort</th><th>Entlassziel</th><th>Status</th></tr></thead>
             <tbody>
               <tr v-for="treatment in historyTreatments" :key="treatment.id">
+                <td>{{ treatment.number }}</td>
                 <td><time>{{ formatDate(treatment.start_date) }}</time><small v-if="treatment.end_date">bis {{ formatDate(treatment.end_date) }}</small></td>
                 <td><strong>{{ treatment.keyword || '–' }}</strong></td>
+                <td>{{ treatment.discharge_destination || '–' }}</td>
                 <td><span class="treatment-status" :class="{ done: treatment.end_date }">{{ treatment.end_date ? 'Abgeschlossen' : 'Laufend' }}</span></td>
               </tr>
             </tbody>
@@ -397,13 +446,15 @@ onMounted(load)
         <h2>Behandlungen</h2>
         <div v-if="treatments.length" class="treatment-table-wrap">
           <table class="treatment-table">
-            <colgroup><col class="col-period"><col class="col-patient"><col class="col-keyword"><col class="col-status"><col class="col-actions"></colgroup>
-            <thead><tr><th>Zeitraum</th><th>Patient</th><th>Stichwort</th><th>Status</th><th><span class="sr-only">Aktionen</span></th></tr></thead>
+            <colgroup><col class="col-number"><col class="col-period"><col class="col-patient"><col class="col-keyword"><col class="col-discharge"><col class="col-status"><col class="col-actions"></colgroup>
+            <thead><tr><th>Behandlungsnr.</th><th>Zeitraum</th><th>Patient</th><th>Stichwort</th><th>Entlassziel</th><th>Status</th><th><span class="sr-only">Aktionen</span></th></tr></thead>
             <tbody>
               <tr v-for="treatment in treatments" :key="treatment.id">
+                <td>{{ treatment.number }}</td>
                 <td><time>{{ formatDate(treatment.start_date) }}</time><small v-if="treatment.end_date">bis {{ formatDate(treatment.end_date) }}</small></td>
                 <td><button v-if="treatment.patient && canChangeTreatment" type="button" class="treatment-patient-link" @click="editTreatment(treatment)"><strong>Nr. {{ treatment.patient.number }} · {{ treatment.patient.display_name }}</strong><small>{{ treatment.patient.birthday || (treatment.patient.age != null ? treatment.patient.age + ' Jahre' : 'Geburtsdatum unbekannt') }}</small></button><span v-else-if="treatment.patient" class="treatment-patient-link"><strong>Nr. {{ treatment.patient.number }} · {{ treatment.patient.display_name }}</strong><small>{{ treatment.patient.birthday || (treatment.patient.age != null ? treatment.patient.age + ' Jahre' : 'Geburtsdatum unbekannt') }}</small></span><span v-else class="muted">Nicht zugeordnet</span></td>
                 <td><strong>{{ treatment.keyword || '–' }}</strong></td>
+                <td>{{ treatment.discharge_destination || '–' }}</td>
                 <td><span class="treatment-status" :class="{ done: treatment.end_date }">{{ treatment.end_date ? 'Abgeschlossen' : 'Laufend' }}</span></td>
                 <td><div class="treatment-table-actions"><button v-if="canChangeTreatment" @click="editTreatment(treatment)">Bearbeiten</button><button v-if="canChangeTreatment && !treatment.end_date" :disabled="!treatment.patient || !treatment.keyword?.trim()" :title="!treatment.patient ? 'Zum Abschließen zuerst einen Patienten zuordnen' : !treatment.keyword?.trim() ? 'Zum Abschließen ist ein Stichwort erforderlich' : 'Behandlung jetzt abschließen'" @click="completeTreatment(treatment)">Abschließen</button><button v-if="canDeleteTreatment" class="danger-button" @click="deleteTreatment(treatment)">Löschen</button></div></td>
               </tr>

@@ -91,18 +91,19 @@ class TreatmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Treatment
         fields = (
-            "id", "mission", "patient", "patient_details", "create_new_patient", "start_date", "end_date",
-            "keyword", "notes", "treater_text", "treater_id", "doctor_text",
+            "id", "number", "mission", "patient", "patient_details", "create_new_patient", "start_date", "end_date",
+            "keyword", "discharge_destination", "notes", "treater_text", "treater_id", "doctor_text",
             "doctor_id", "assigning_enum", "leaving_enum", "leaving_specified",
             "external_order_number",
         )
-        read_only_fields = ("id", "mission")
+        read_only_fields = ("id", "number", "mission")
 
     def validate(self, attrs):
         patient = attrs.get("patient", getattr(self.instance, "patient", None))
         start_date = attrs.get("start_date", getattr(self.instance, "start_date", None))
         end_date = attrs.get("end_date", getattr(self.instance, "end_date", None))
         keyword = attrs.get("keyword", getattr(self.instance, "keyword", None))
+        discharge_destination = attrs.get("discharge_destination", getattr(self.instance, "discharge_destination", ""))
 
         nested_patient_id = getattr(self.context.get("view"), "kwargs", {}).get("patient_pk")
         patient_details = attrs.get("patient_details")
@@ -117,6 +118,10 @@ class TreatmentSerializer(serializers.ModelSerializer):
         if end_date is not None and not (keyword or "").strip():
             raise serializers.ValidationError({
                 "keyword": "Zum Abschließen einer Behandlung ist ein Stichwort erforderlich."
+            })
+        if end_date is not None and not discharge_destination.strip():
+            raise serializers.ValidationError({
+                "discharge_destination": "Zum Abschließen einer Behandlung ist ein Entlassziel erforderlich."
             })
         if start_date and end_date and end_date < start_date:
             raise serializers.ValidationError({

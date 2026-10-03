@@ -1,5 +1,6 @@
 from auditlog.models import AuditlogHistoryField
 from auditlog.registry import auditlog
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
@@ -51,7 +52,8 @@ class Patient(MissionNumberedModel):
         return self.name or f"Unbekannt #{self.pk or 'neu'}"
 
 
-class Treatment(models.Model):
+class Treatment(MissionNumberedModel):
+    counter_field = "treatment_number_counter"
     mission = models.ForeignKey(
         "missions.Mission",
         on_delete=models.CASCADE,
@@ -67,6 +69,7 @@ class Treatment(models.Model):
     )
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True)
+    discharge_destination = models.CharField("Entlassziel", max_length=200, blank=True, default="")
     keyword = models.CharField(max_length=200, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     treater_text = models.CharField(max_length=100, null=True, blank=True)
@@ -100,6 +103,20 @@ class Treatment(models.Model):
     leaving_specified = models.CharField(max_length=100, null=True, blank=True)
     external_order_number = models.CharField(max_length=100, null=True, blank=True)
     history = AuditlogHistoryField(delete_related=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("mission", "number"), name="unique_treatment_mission_number",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.end_date is not None and not self.discharge_destination.strip():
+            raise ValidationError({
+                "discharge_destination": "Zum Abschließen einer Behandlung ist ein Entlassziel erforderlich."
+            })
 
     def __str__(self):
         patient = self.patient or "Nicht zugeordnet"

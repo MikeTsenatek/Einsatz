@@ -1638,5 +1638,29 @@
       "name": "Desorientierung",
       "is_active": true
     }
+  },
+  {
+    "model": "mgmt.dischargedestination",
+    "pk": 1,
+    "fields": {
+      "name": "Zurück zur Veranstaltung",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.dischargedestination",
+    "pk": 2,
+    "fields": {
+      "name": "Nach Hause",
+      "is_active": true
+    }
+  },
+  {
+    "model": "mgmt.dischargedestination",
+    "pk": 3,
+    "fields": {
+      "name": "Krankenhaus",
+      "is_active": true
+    }
   }
 ]

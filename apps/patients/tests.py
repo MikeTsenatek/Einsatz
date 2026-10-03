@@ -341,6 +341,7 @@ class UnassignedTreatmentWorkflowTests(PermissionTestCase):
             {
                 "patient": self.patient.pk,
                 "keyword": "Versorgung",
+                "discharge_destination": "Nach Hause",
                 "end_date": "2026-08-22T11:00:00Z",
             },
             format="json",
@@ -389,3 +390,76 @@ class UnassignedTreatmentWorkflowTests(PermissionTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class DischargeDestinationTreatmentTests(PermissionTestCase):
+    def setUp(self):
+        super().setUp()
+        self.grant("change_treatment")
+        self.grant("add_treatment")
+        self.treatment = Treatment.objects.create(
+            mission=self.mission, patient=self.patient,
+            start_date="2026-08-22T10:00:00Z", keyword="Versorgung",
+        )
+        self.url = reverse("mission-treatment-detail", args=(self.mission.pk, self.treatment.pk))
+
+    def test_completion_requires_nonempty_destination(self):
+        for destination in (None, "", "   "):
+            with self.subTest(destination=destination):
+                payload = {"end_date": "2026-08-22T11:00:00Z"}
+                if destination is not None:
+                    payload["discharge_destination"] = destination
+                response = self.client.patch(self.url, payload, format="json")
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("discharge_destination", response.data)
+                self.treatment.refresh_from_db()
+                self.assertIsNone(self.treatment.end_date)
+
+    def test_completion_accepts_suggestions_and_custom_text(self):
+        for destination in ("Zurück zur Veranstaltung", "Nach Hause", "Krankenhaus", "Abholung durch Angehörige am Nordtor"):
+            with self.subTest(destination=destination):
+                response = self.client.patch(self.url, {
+                    "end_date": "2026-08-22T11:00:00Z",
+                    "discharge_destination": destination,
+                }, format="json")
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(response.data["discharge_destination"], destination)
+                self.treatment.refresh_from_db()
+                self.assertEqual(self.treatment.discharge_destination, destination)
+
+    def test_saved_destination_is_used_for_completion_and_cannot_be_cleared_afterwards(self):
+        saved = self.client.patch(self.url, {"discharge_destination": "Nach Hause"}, format="json")
+        self.assertEqual(saved.status_code, status.HTTP_200_OK)
+        completed = self.client.patch(self.url, {"end_date": "2026-08-22T11:00:00Z"}, format="json")
+        self.assertEqual(completed.status_code, status.HTTP_200_OK)
+        rejected = self.client.patch(self.url, {"discharge_destination": ""}, format="json")
+        self.assertEqual(rejected.status_code, status.HTTP_400_BAD_REQUEST)
+        self.treatment.refresh_from_db()
+        self.assertEqual(self.treatment.discharge_destination, "Nach Hause")
+        updated = self.client.patch(self.url, {"notes": "Nachtrag"}, format="json")
+        self.assertEqual(updated.status_code, status.HTTP_200_OK)
+
+    def test_completed_creation_requires_destination_for_both_routes(self):
+        for route, key in [("mission-treatment-list", self.mission.pk), ("patient-treatment-list", self.patient.pk)]:
+            with self.subTest(route=route):
+                payload = {
+                    "patient": self.patient.pk, "keyword": "Versorgung",
+                    "start_date": "2026-08-22T10:00:00Z", "end_date": "2026-08-22T11:00:00Z",
+                }
+                response = self.client.post(reverse(route, args=(key,)), payload, format="json")
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn("discharge_destination", response.data)
+                payload["discharge_destination"] = "Krankenhaus"
+                response = self.client.post(reverse(route, args=(key,)), payload, format="json")
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                self.assertEqual(response.data["discharge_destination"], "Krankenhaus")
+
+    def test_admin_validation_requires_destination(self):
+        from django.core.exceptions import ValidationError
+        from django.utils.dateparse import parse_datetime
+        self.treatment.end_date = parse_datetime("2026-08-22T11:00:00Z")
+        with self.assertRaises(ValidationError) as error:
+            self.treatment.clean()
+        self.assertIn("discharge_destination", error.exception.message_dict)
+        self.treatment.discharge_destination = "Nach Hause"
+        self.treatment.clean()

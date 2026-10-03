@@ -4,8 +4,8 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.mgmt.models import PriorityEnum
-from apps.patients.models import Patient
-from apps.patients.serializers import PatientSerializer, TreatmentPatientSerializer
+from apps.patients.models import Patient, Treatment
+from apps.patients.serializers import PatientSerializer, TreatmentPatientSerializer, TreatmentSerializer
 from .models import Mission, OperationLogEntry
 from .serializers import OperationLogEntrySerializer
 
@@ -22,12 +22,16 @@ class MissionNumberingTests(TestCase):
             text="Meldung", priority=self.priority,
         )
 
+    def treatment(self, mission=None, patient=None):
+        return Treatment.objects.create(mission=mission or self.mission, patient=patient, start_date=timezone.now())
+
     def test_separate_sequences_per_mission_and_record_type(self):
         first = Patient.objects.create(mission=self.mission, name="A")
         second = Patient.objects.create(mission=self.mission, name="B")
         other = Patient.objects.create(mission=self.other, name="C")
         self.assertEqual([first.number, second.number, other.number], [1, 2, 1])
         self.assertEqual([self.entry().number, self.entry().number, self.entry(self.other).number], [1, 2, 1])
+        self.assertEqual([self.treatment(patient=first).number, self.treatment(patient=first).number, self.treatment(self.other).number], [1, 2, 1])
 
     def test_deleted_patient_number_is_not_reused(self):
         patient = Patient.objects.create(mission=self.mission, name="A")
@@ -46,7 +50,7 @@ class MissionNumberingTests(TestCase):
         self.assertEqual((patient.number, entry.number, self.entry().number), (1, 1, 2))
 
     def test_number_and_mission_cannot_be_changed(self):
-        for record in [Patient.objects.create(mission=self.mission, name="A"), self.entry()]:
+        for record in [Patient.objects.create(mission=self.mission, name="A"), self.entry(), self.treatment()]:
             record.number = 99
             with self.assertRaises(ValidationError):
                 record.save()
@@ -65,7 +69,7 @@ class MissionNumberingTests(TestCase):
     def test_api_numbers_are_exposed_and_read_only(self):
         patient = Patient.objects.create(mission=self.mission, name="A")
         entry = self.entry()
-        for serializer_type, record in [(PatientSerializer, patient), (TreatmentPatientSerializer, patient), (OperationLogEntrySerializer, entry)]:
+        for serializer_type, record in [(PatientSerializer, patient), (TreatmentPatientSerializer, patient), (OperationLogEntrySerializer, entry), (TreatmentSerializer, self.treatment())]:
             self.assertEqual(serializer_type(record).data["number"], 1)
             serializer = serializer_type(record, data={"number": 99}, partial=True)
             self.assertTrue(serializer.is_valid(), serializer.errors)
@@ -73,3 +77,27 @@ class MissionNumberingTests(TestCase):
         serializer = PatientSerializer(patient, data={"mission": self.other.pk}, partial=True)
         self.assertFalse(serializer.is_valid())
         self.assertIn("mission", serializer.errors)
+
+    def test_treatment_numbers_survive_assignment_completion_and_deletion(self):
+        patient = Patient.objects.create(mission=self.mission, name="Patient")
+        treatment = self.treatment()
+        treatment.patient = patient
+        treatment.save(update_fields=["patient"])
+        treatment.keyword = "Versorgung"
+        treatment.end_date = timezone.now()
+        treatment.discharge_destination = "Nach Hause"
+        treatment.save(update_fields=["keyword", "end_date", "discharge_destination"])
+        treatment.refresh_from_db()
+        self.assertEqual(treatment.number, 1)
+        treatment.delete()
+        self.assertEqual(self.treatment(patient=patient).number, 2)
+        patient.treatments.all().delete()
+        patient.delete()
+        self.assertEqual(self.treatment().number, 3)
+
+    def test_treatment_counter_rolls_back_with_record(self):
+        with self.assertRaises(RuntimeError):
+            with transaction.atomic():
+                self.treatment()
+                raise RuntimeError("rollback")
+        self.assertEqual(self.treatment().number, 1)

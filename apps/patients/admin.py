@@ -23,6 +23,7 @@ class TreatmentInlineFormSet(BaseInlineFormSet):
 
 class TreatmentInline(admin.StackedInline):
     model = Treatment
+    readonly_fields = ("number",)
     formset = TreatmentInlineFormSet
     extra = 0
     exclude = ("mission",)

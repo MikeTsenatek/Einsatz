@@ -21,6 +21,7 @@ class Mission(models.Model):
         default=State.ACTIVE,
     )
     patient_number_counter = models.PositiveIntegerField(default=0, editable=False)
+    treatment_number_counter = models.PositiveIntegerField(default=0, editable=False)
     operation_log_number_counter = models.PositiveIntegerField(default=0, editable=False)
     history = AuditlogHistoryField(delete_related=False)
 

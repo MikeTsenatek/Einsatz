@@ -46,3 +46,12 @@ class TreatmentKeyword(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class DischargeDestination(NamedReferenceModel):
+    is_active = models.BooleanField("Aktiv", default=True, db_index=True)
+
+    class Meta:
+        verbose_name = "Entlassziel"
+        verbose_name_plural = "Entlassziele"
+        ordering = ("pk",)

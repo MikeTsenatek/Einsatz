@@ -23,9 +23,56 @@ class DailyStatisticsTests(SimpleTestCase):
         self.user.has_perm.return_value = True
         self.user.has_perms.return_value = True
         self.mission = Mock()
+        self.mission.patients.values.return_value = []
         self.mission.operation_log_entries.filter.return_value.values_list.return_value = []
         self.mission.treatments.values.return_value = []
         self.mission.helpermission_set.select_related.return_value = []
+
+    def test_duration_and_hourly_occupancy_merge_same_patient(self):
+        self.mission.treatments.values.return_value = [
+            {"pk": 1, "patient_id": 7, "start_date": timestamp(1, 10), "end_date": timestamp(1, 11), "transported_by_public_ems": False},
+            {"pk": 2, "patient_id": 7, "start_date": timestamp(1, 10), "end_date": timestamp(1, 12), "transported_by_public_ems": False},
+            {"pk": 3, "patient_id": None, "start_date": timestamp(1, 10), "end_date": timestamp(1, 10).replace(minute=30), "transported_by_public_ems": False},
+        ]
+        data = daily_statistics(self.mission, self.user)
+        self.assertEqual(data["summary"]["treatment_seconds"], 12600)
+        self.assertEqual([hour["patients"] for hour in data["hourly"]], [1.5, 1])
+
+    def test_hourly_transports_use_end_time_including_next_hour_boundary(self):
+        self.mission.treatments.values.return_value = [
+            {"pk": 1, "patient_id": 7, "start_date": timestamp(1, 10), "end_date": timestamp(1, 11), "transported_by_public_ems": True},
+            {"pk": 2, "patient_id": 8, "start_date": timestamp(1, 10), "end_date": timestamp(1, 11).replace(minute=30), "transported_by_public_ems": True},
+            {"pk": 3, "patient_id": 9, "start_date": timestamp(1, 10), "end_date": timestamp(1, 11), "transported_by_public_ems": False},
+        ]
+        hourly = daily_statistics(self.mission, self.user)["hourly"]
+        self.assertEqual([hour["transports"] for hour in hourly], [0, 2])
+
+    def test_zero_duration_transport_is_still_shown_in_chart(self):
+        self.mission.treatments.values.return_value = [
+            {"pk": 1, "patient_id": None, "start_date": timestamp(1, 11), "end_date": timestamp(1, 11), "transported_by_public_ems": True},
+        ]
+        hourly = daily_statistics(self.mission, self.user)["hourly"]
+        self.assertEqual(len(hourly), 1)
+        self.assertEqual(hourly[0]["patients"], 0)
+        self.assertEqual(hourly[0]["transports"], 1)
+
+    def test_service_time_merges_overlapping_assignments(self):
+        self.mission.helpermission_set.select_related.return_value = [
+            SimpleNamespace(helper_id=1, team_id=None, team=None, start_date=timestamp(1, 10), end_date=timestamp(1, 12)),
+            SimpleNamespace(helper_id=1, team_id=None, team=None, start_date=timestamp(1, 11), end_date=timestamp(1, 13)),
+            SimpleNamespace(helper_id=2, team_id=None, team=None, start_date=timestamp(1, 10), end_date=timestamp(1, 11)),
+        ]
+        self.assertEqual(daily_statistics(self.mission, self.user)["summary"]["helper_seconds"], 14400)
+
+    def test_average_age_ignores_unknown_and_requires_patient_permission(self):
+        self.mission.patients.values.return_value = [
+            {"birthday": None, "age": 20}, {"birthday": None, "age": 40}, {"birthday": None, "age": None},
+        ]
+        self.assertEqual(daily_statistics(self.mission, self.user)["summary"]["average_age"], 30)
+        self.mission.patients.values.reset_mock()
+        self.user.has_perm.side_effect = lambda permission: permission != "patients.view_patient"
+        self.assertIsNone(daily_statistics(self.mission, self.user)["summary"]["average_age"])
+        self.mission.patients.values.assert_not_called()
 
     def test_each_treatment_counts_on_start_day_and_transport_on_completion_day(self):
         self.mission.treatments.values.return_value = [
